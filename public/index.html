@@ -78,14 +78,14 @@
                         <p class="mt-2 text-xs text-gray-500">输入动漫角色名称即可生成黑板粉笔画。</p>
                     </div>
 
-                    <!-- 风格选择 (预留接口) -->
+                    <!-- 风格选择 (云彩画已启用) -->
                     <div>
                         <label for="style" class="block text-sm font-medium text-gray-300 mb-2">绘画风格</label>
                         <div class="relative">
                             <select id="style" name="style" 
                                 class="w-full bg-[#18181b] border border-gray-700 rounded-lg px-4 py-3 text-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
                                 <option value="blackboard" selected>🏫 黑板粉笔画 (默认)</option>
-                                <option value="cloud" disabled>☁️ 云彩画风 (敬请期待)</option>
+                                <option value="cloud">☁️ 现实主义云彩</option>
                                 <option value="sketch" disabled>✏️ 铅笔画风 (敬请期待)</option>
                             </select>
                             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
@@ -124,7 +124,7 @@
                     <div class="inline-block p-4 rounded-full bg-gray-800 mb-4">
                         <svg class="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                     </div>
-                    <p class="text-gray-500">您的黑板画作将在这里显示</p>
+                    <p class="text-gray-500">您的画作将在这里显示</p>
                 </div>
 
                 <!-- 加载中 -->
@@ -158,13 +158,26 @@
         const actionToolbar = document.getElementById('actionToolbar');
         const downloadLink = document.getElementById('downloadLink');
 
-        const steps = [
-            "生成提示词中...",
-            "调用 Gemini 模型...",
-            "渲染粉笔纹理...",
-            "保存到 R2 存储...",
-            "完成处理..."
-        ];
+        // 根据选择的风格更新加载步骤文本
+        function updateLoadingSteps(style) {
+            if (style === 'cloud') {
+                return [
+                    "分析云彩形态...",
+                    "调用 Gemini 模型...",
+                    "渲染天空光影...",
+                    "保存到 R2 存储...",
+                    "完成处理..."
+                ];
+            } else {
+                return [
+                    "生成提示词中...",
+                    "调用 Gemini 模型...",
+                    "渲染粉笔纹理...",
+                    "保存到 R2 存储...",
+                    "完成处理..."
+                ];
+            }
+        }
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -176,6 +189,9 @@
 
             setLoading(true);
             showStatus(null);
+            
+            // 使用对应风格的加载步骤
+            const steps = updateLoadingSteps(style);
             
             // 模拟进度条文本变化
             let stepIndex = 0;
@@ -260,6 +276,14 @@
             statusMessage.className = `text-center text-sm p-3 rounded ${type === 'error' ? 'bg-red-900/50 text-red-200 border border-red-800' : 'bg-gray-800 text-gray-300'}`;
             statusMessage.classList.remove('hidden');
         }
+
+        // 监听风格变化，动态更新占位符文本
+        document.getElementById('style').addEventListener('change', function(e) {
+            const placeholderText = e.target.value === 'cloud' ? 
+                '您的云彩画作将在这里显示' : 
+                '您的黑板画作将在这里显示';
+            document.querySelector('#placeholder p').textContent = placeholderText;
+        });
     </script>
 </body>
 </html>
