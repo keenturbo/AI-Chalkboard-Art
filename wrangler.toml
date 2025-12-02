@@ -1,0 +1,11 @@
+name = "ai-chalkboard-art"
+compatibility_date = "2024-01-01"
+
+[env.production]
+[[env.production.r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "ai-chalkboard-art-images"  # 替换为你的 R2 bucket 名称
+
+[env.production.vars]
+# 这些变量在 Cloudflare Pages 后台配置
+# GEMINI_API_KEY = "your_google_gemini_api_key"
