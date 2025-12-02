@@ -1,270 +1,148 @@
-# AI粉笔画 - 智能黑板画生成器
+# 🏫 AI Chalkboard Art Generator (AI 黑板画生成器)
 
-## 项目简介
-一个基于Cloudflare架构的模块化AI绘图Web应用，用户输入动漫角色名称，后端通过高级提示词模板调用Google Gemini-3-Pro-Image模型生成逼真的黑板粉笔画风格图像。
+一个基于 Cloudflare 全栈架构 (Pages + Functions + R2) 的 AI 绘画应用。
+用户输入角色名称，AI 自动生成逼真的黑板粉笔画风格图像，并永久存储在云端。
 
-- **前端**：简洁现代的网页界面，输入框+展示区
-- **后端**：Cloudflare Workers无服务器架构
-- **存储**：Cloudflare R2对象存储
-- **AI模型**：Google Gemini-3-Pro-Image（香蕉大模型）
-- **可扩展**：模块化设计，支持添加新画风和新AI模型
+[![Deploy to Cloudflare Pages](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/keenturbo/AI-Chalkboard-Art)
 
-## 功能特点
-- 🎨 **专业提示词**：内置"Universal Blackboard Art Generator"高级提示词模板
-- 🖼️ **逼真效果**：生成具有中国教室环境氛围的写实黑板粉笔画
-- 🚀 **无服务器**：基于Cloudflare Workers，零运维成本
-- 📁 **图片存储**：自动存储到Cloudflare R2，支持访问链接
-- 🔧 **模块化**：提示词和AI模型接口函数化，便于扩展
-- 💰 **低成本**：按请求付费，无固定服务器费用
+[Demo](https://anime.icon.pp.ua)
 
-## 技术架构
+## ✨ 特性
 
-```
-┌─────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│   前端界面   │────▶│ Cloudflare      │────▶│ Gemini API      │
-│ (Pages)      │     │ Workers         │     │ (文生图)         │
-└─────────────┘     └─────────────────┘     └─────────────────┘
-                           │
-                           ▼
-                  ┌─────────────────┐
-                  │ Cloudflare R2   │
-                  │ (图片存储)       │
-                  └─────────────────┘
-```
-
-## 快速部署
-
-### 前置条件
-- Cloudflare账号（免费套餐即可）
-- Google Cloud账号（用于Gemini API）
-- Node.js 16+ 环境
-- Git
+- **零成本架构**：完全基于 Cloudflare 免费层 (Pages, Workers, R2)。
+- **多模型支持**：支持 Google Gemini-3-pro-image-preview, 香蕉大模型, Imagen 3, 或任何兼容 Gemini 协议的模型。
+- **极速体验**：全球 CDN 加速，Serverless 后端毫秒级响应。
+- **永久存储**：生成的画作自动保存至 Cloudflare R2 对象存储。
 
 ---
 
-### 1. 克隆项目
-```bash
-git clone https://github.com/keenturbo/AI-Chalkboard-Art.git
-cd AI-Chalkboard-Art
-```
+## 🛠️ 准备工作
 
-### 2. 获取Google Gemini API密钥
-1. 访问 [Google AI Studio](https://aistudio.google.com/)
-2. 创建新项目或选择现有项目
-3. 启用 "Generative AI API" 
-4. 创建API密钥
-5. 复制API密钥备用
+在开始之前，请确保你拥有：
 
-### 3. 配置Cloudflare CLI
-```bash
-# 安装Wrangler CLI
-npm install -g wrangler
-
-# 登录Cloudflare
-wrangler login
-```
-
-### 4. 创建Cloudflare R2存储桶
-```bash
-# 创建R2存储桶
-wrangler r2 bucket create chalkboard-images
-
-# 记录存储桶名称，后续配置会用到
-```
-
-### 5. 配置环境变量
-创建 `wrangler.toml` 文件：
-```toml
-name = "ai-chalkboard-art"
-main = "src/index.js"
-compatibility_date = "2023-10-30"
-
-[env.production]
-vars = { GEMINI_API_KEY = "你的Gemini_API密钥" }
-
-[[env.production.r2_buckets]]
-binding = "IMAGES"
-bucket_name = "chalkboard-images"
-```
-
-### 6. 部署后端（Cloudflare Workers）
-```bash
-# 安装依赖
-npm install
-
-# 部署到Cloudflare
-wrangler deploy
-```
-
-### 7. 配置域名（可选）
-```bash
-# 绑定自定义域名
-wrangler custom-domains add api.yourdomain.com
-```
-
-### 8. 部署前端（Cloudflare Pages）
-1. 将前端代码上传到GitHub仓库
-2. 登录Cloudflare Dashboard
-3. 进入Pages页面
-4. 连接GitHub仓库
-5. 配置构建命令（如需要）
-6. 部署完成
+1.  **GitHub 账号**：用于存放代码。
+2.  **Cloudflare 账号**：用于部署应用和存储图片。
+3.  **Google AI Studio API Key**：[点击申请](https://aistudio.google.com/app/apikey)。
 
 ---
 
-## 详细配置指南
+## 🚀 一键部署 (推荐)
 
-### 后端代码结构
-```
-src/
-├── index.js              # Workers入口文件
-├── models/
-│   ├── prompt-manager.js # 提示词管理器
-│   ├── model-adapter.js  # AI模型接口适配器
-│   └── gemini-client.js  # Gemini API客户端
-└── utils/
-    ├── image-storage.js  # R2存储工具
-    └── response.js       # 响应格式化
-```
+点击上方按钮 **[Deploy to Cloudflare Pages]**，即可自动部署。
 
-### 提示词管理
-```javascript
-// models/prompt-manager.js
-class PromptManager {
-  static getPrompt(style, characterName) {
-    switch(style) {
-      case 'blackboard':
-        return this.generateBlackboardPrompt(characterName);
-      case 'cloud':
-        return this.generateCloudPrompt(characterName);
-      // 可扩展更多风格
-      default:
-        return this.generateBlackboardPrompt(characterName);
-    }
-  }
-  
-  static generateBlackboardPrompt(name) {
-    return `A raw, documentary-style close-up photograph of a classroom...${name}...`;
-  }
-}
-```
+部署完成后，只需在 Cloudflare 后台配置以下两项：
 
-### AI模型接口
-```javascript
-// models/model-adapter.js
-class ModelAdapter {
-  static async generateImage(model, prompt) {
-    switch(model) {
-      case 'gemini':
-        return GeminiClient.generate(prompt);
-      case 'kling':
-        return KlingClient.generate(prompt);
-      case 'grok':
-        return GrokClient.generate(prompt);
-      // 可扩展更多模型
-      default:
-        return GeminiClient.generate(prompt);
-    }
-  }
-}
-```
+1.  **环境变量**：在项目 Settings -> Environment variables 中设置：
+    *   `GEMINI_API_KEY`: 你的 Google API Key
+    *   `AI_MODEL_NAME`: `gemini-3-pro-image-preview`
+    *   `R2_PUBLIC_DOMAIN`: 你的 R2 公开域名
+    
+2.  **R2 存储桶绑定**：在 Settings -> Functions -> R2 Bucket Bindings 中：
+    *   Variable name: `R2_BUCKET`
+    *   选择你的 R2 bucket
 
-## API接口
-
-### 生成图片
-```
-POST /api/generate
-Content-Type: application/json
-
-{
-  "character_name": "疯狂动物城2",
-  "style": "blackboard",
-  "model": "gemini"
-}
-```
-
-**响应示例：**
-```json
-{
-  "success": true,
-  "image_url": "https://r2.example.com/chalkboard-xxx.jpg",
-  "character_name": "疯狂动物城2",
-  "style": "blackboard",
-  "generated_at": "2024-01-01T12:00:00Z"
-}
-```
-
-## 扩展开发
-
-### 添加新的画风
-1. 在 `PromptManager` 中添加新的 `generateXxxPrompt()` 方法
-2. 更新前端的风格选择菜单
-3. 测试新画风效果
-
-### 添加新的AI模型
-1. 在 `models/` 目录下创建新的客户端文件
-2. 在 `ModelAdapter` 中添加新的模型 case
-3. 配置相应的环境变量和API密钥
-
-## 成本估算
-
-### Cloudflare Workers
-- 免费套餐：10万请求/天
-- 付费套餐：$0.5/百万请求
-
-### Cloudflare R2
-- 免费套餐：10GB存储 + 100万次读取/月
-- 付费套餐：$0.015/GB/月 + $0.00036/读取
-
-### Gemini API
-- Imagen 3：$0.03-0.08/张（根据分辨率）
-- 月度免费配额：一定数量的免费调用
-
-**预估单次调用成本：$0.03-0.08**
-
-## 故障排除
-
-### 常见问题
-1. **Gemini API调用失败**
-   - 检查API密钥是否正确
-   - 确认项目权限和预算设置
-
-2. **R2存储上传失败**
-   - 检查存储桶权限配置
-   - 确认存储桶名称正确
-
-3. **Workers部署失败**
-   - 检查 `wrangler.toml` 配置
-   - 确认依赖版本兼容性
-
-### 调试方法
-```bash
-# 本地开发
-wrangler dev
-
-# 查看日志
-wrangler tail
-
-# 测试API
-curl -X POST https://your-worker.workers.dev/api/generate \
-  -H "Content-Type: application/json" \
-  -d '{"character_name":"test","style":"blackboard","model":"gemini"}'
-```
-
-## 贡献指南
-
-1. Fork 项目
-2. 创建功能分支 (`git checkout -b feature/new-style`)
-3. 提交变更 (`git commit -am 'Add new art style'`)
-4. 推送到分支 (`git push origin feature/new-style`)
-5. 创建Pull Request
-
-## 许可证
-MIT License
-
-## 联系方式
-GitHub: [@keenturbo](https://github.com/keenturbo)
+然后重试部署即可。
 
 ---
 
-**开始使用AI粉笔画，让动漫角色在黑板上重生！** 🎨✨
+## 🚀 保姆级手动部署教程
+
+### 第一步：Fork 仓库
+点击右上角的 **Fork** 按钮，将本仓库复制到你自己的 GitHub 账号下。
+
+### 第二步：配置 Cloudflare R2 (存储桶)
+*这是最关键的一步，很多人在这里卡住，请仔细操作。*
+
+1.  登录 Cloudflare Dashboard，左侧菜单选择 **R2**。
+2.  点击 **Create bucket** (创建存储桶)。
+    *   **Bucket name**: 输入 `ai-chalkboard-art-images` (或你喜欢的名字)。
+    *   **Location区域**: 选 `Automatic自动` 即可，默认标准存储。
+    *   点击 **Create Bucket创建存储桶**。
+3.  **开启公开访问** (必须做，否则前端图片无法显示)：
+    *   进入刚才创建的 存储桶bucket。
+    *   点击顶部的 **Settings (设置)** 标签页。
+    *   向下滚动找到 **Public access (公开访问)公共开发 URL**。点击启用。
+    *   **方案 A (推荐)**: 点击 **Connect Custom Domain自定义域名**，绑定一个你自己的二级域名 (如 `pic.yourdomain.com`)。
+    *   **方案 B (简单)**: 点击 **R2.dev subdomain** 下的 "Allow Access"，获得一个 `pub-xxx.r2.dev` 的地址。
+    *   **记下这个域名**，稍后要用。
+
+### 第三步：创建 Cloudflare Pages 项目
+*⚠️ 避坑预警：千万不要创建成 "Worker" 项目！*
+
+1.  回到 Cloudflare Dashboard 主页，点击左侧 **Workers & Pages**。
+2.  点击蓝色按钮 **Create application** (创建应用)。
+3.  **关键点**：点击底部的 **Pages** 标签页 (Cloudflare改版了，注意下面小字`Pages`)。
+4.  点击 **Connect to Git**。
+5.  选择你刚才 Fork 的 `AI-Chalkboard-Art` 仓库。（Cloudflare绑定你的GitHub账户）
+6.  **配置构建参数** (请严格照抄，不要自己发挥)：
+    *   **Project name**: 随意 (如 `ai-chalkboard-art`)。
+    *   **Production branch**: `main`。
+    *   **Framework preset**: `None` 。
+    *   **Build command (构建命令)**: **留空！什么都别填！** 
+    *   **Build output directory (构建输出目录)**: `public` (⚠️必须填这个)。
+
+### 第四步：设置环境变量
+在创建页面的下方，或者项目创建后的 **Settings -> Environment variables** 中添加：
+
+| 变量名 | 示例值 | 说明 |
+| :--- | :--- | :--- |
+| `GEMINI_API_KEY` | `AIzaSyD...` | 你的 Google API Key |
+| `AI_MODEL_NAME` | `gemini-3-pro-image-preview` | 推荐使用 Gemini香蕉图片模型 |
+| `R2_PUBLIC_DOMAIN` | `https://pic.yourdomain.com` | **必须填**。第二步中获得的 R2 域名 (带 https) |
+| `AI_MODEL_URL` | (留空) | 除非你用第三方中转，否则**不要填**，直接删掉此行 |
+
+### 第五步：绑定 R2 存储桶
+*代码要访问 R2，必须先在后台"插上电"。*
+
+1.  项目创建完成后，进入 **Settings (设置)** -> **绑定Pages Functions (函数)**。
+2.  找到 **R2 Bucket Bindings** (R2 存储桶绑定)。
+3.  点击 **Add binding** (添加绑定)。
+4.  **Variable name (变量名)**: 必须填 `R2_BUCKET` (大小写敏感，必须完全一致)。
+5.  **R2 Bucket**: 选择你在第二步创建的那个 bucket。
+6.  点击 **Save**。
+
+### 第六步：重新部署
+因为刚才修改了绑定和环境变量，需要重新部署才能生效。
+
+1.  进入 **Deployments (部署)** 标签页。
+2.  点击最新一次部署右侧的 **...** -> **Retry deployment (重试部署)**。
+3.  等待几秒钟，看到 "Success" 后，点击访问链接即可体验！
+
+---
+
+## ☠️ 避坑指南 (常见错误)
+
+1.  **错误：页面显示空白**
+    *   **原因**：构建输出目录没填 `public`，或者填成了 `/`。
+    *   **解法**：去 Settings -> Builds 修改 Output directory 为 `public`。
+
+2.  **错误：Deploy Failed (Sh: wrangler not found)**
+    *   **原因**：你在构建命令里填了 `npm run deploy`。
+    *   **解法**：去 Settings -> Builds 把 Build command 清空。
+
+3.  **错误：图片生成了但显示裂图 (403 Forbidden)**
+    *   **原因**：R2 存储桶没有开启 Public Access，或者环境变量 `R2_PUBLIC_DOMAIN` 填错了。
+    *   **解法**：检查 R2 设置，确保域名能直接访问图片。
+
+4.  **错误：API 404 (Model not found)**
+    *   **原因**：模型名称填错了，或者用了旧版代码去调新版模型。
+    *   **解法**：确保 `AI_MODEL_NAME` 是 `gemini-3-pro-image-preview` 这种有效 ID，且代码已更新到最新版。
+
+---
+
+## 🛠️ 本地开发 (可选)
+
+如果你想在本地修改代码：
+
+1.  安装依赖：`npm install`
+2.  登录 Cloudflare：`npx wrangler login`
+3.  启动本地服务：`npm run dev`
+
+注意：本地开发需要配置 `.dev.vars` 文件来模拟环境变量。
+
+```env
+# .dev.vars
+GEMINI_API_KEY=your_key
+R2_PUBLIC_DOMAIN=https://your-r2-domain.com
+AI_MODEL_NAME=gemini-3-pro-image-preview
+```
