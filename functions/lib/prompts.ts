@@ -20,8 +20,12 @@ function buildBlackboardPrompt(name: string): string {
     "A raw, documentary-style close-up photograph of a classroom. 
     The focal point is a large, slightly worn green blackboard with visible cloudy white eraser smudges and chalk residue on the surface. 
     Drawn on this textured surface is a masterpiece chalk art of ${name}. 
-    The character is depicted in a dynamic pose, rendered with thick, dusty chalk strokes in vibrant colors (white, pink, yellow, blue, green, orange, purple, brown, red).
-    The character's face and skin are fully filled in with dense white and pale orange chalk hatching (not left as green board color)
+    
+    CRITICAL STYLE: The character is rendered in a 'High-Density Soft Pastel' style with solid, opaque coverage. 
+    - The face, skin, and body are FULLY FILLED with thick, layered chalk application, completely covering the green board background.
+    - Use vibrant, true-to-life colors (e.g., orange, cream, brown for fur/skin) to create a rich, 3D volumetric look.
+    - No outline-only drawing; this is a fully colored chalk painting with impasto texture.
+
     To the right, vertical Chinese text '${name}' is written in hand-written chalk calligraphy. 
     The foreground is out of focus, featuring the worn edge of an old wooden podium with a battered box of colorful chalks and scattered broken pieces. 
     In the corner, a stack of worn paper textbooks sits on a desk. 
@@ -32,8 +36,6 @@ function buildBlackboardPrompt(name: string): string {
 
 // 新增：云彩画提示词模板（完整实现）
 function buildCloudPrompt(name: string): string {
-  // 基础分析：默认使用白色积云 + 广阔天空
-  // 这里简化处理，因为 Gemini 模型足够智能，能自己分析角色
   return `
     "A breathtaking low-angle photograph of a vast sky. 
     A massive, natural white cumulus cloud formation dominates the frame. 
