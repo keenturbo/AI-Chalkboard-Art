@@ -20,7 +20,7 @@ function buildBlackboardPrompt(name: string): string {
     "A raw, documentary-style close-up photograph of a classroom. 
     The focal point is a large, slightly worn green blackboard with visible cloudy white eraser smudges and chalk residue on the surface. 
     Drawn on this textured surface is a masterpiece chalk art of ${name}. 
-    The character is depicted in a dynamic pose, rendered with thick, dusty chalk strokes in vibrant colors (pink, yellow, blue). 
+    The character is depicted in a dynamic pose, rendered with thick, dusty chalk strokes in vibrant colors (white, pink, yellow, blue, green, orange, purple, brown, red). 
     To the right, vertical Chinese text '${name}' is written in hand-written chalk calligraphy. 
     The foreground is out of focus, featuring the worn edge of an old wooden podium with a battered box of colorful chalks and scattered broken pieces. 
     In the corner, a stack of worn paper textbooks sits on a desk. 
