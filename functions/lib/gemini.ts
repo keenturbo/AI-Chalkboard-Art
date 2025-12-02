@@ -6,7 +6,7 @@ export class GeminiModel implements AIModelAdapter {
   private modelName: string;
 
   private static readonly DEFAULT_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
-  private static readonly DEFAULT_MODEL = 'imagen-3.0-generate-001'; 
+  private static readonly DEFAULT_MODEL = 'gemini-3-pro-image-preview'; 
 
   constructor(apiKey: string, env?: Env) {
     if (!apiKey) throw new Error('Gemini API Key is missing');
