@@ -19,9 +19,7 @@ export async function saveImageToR2(
   });
 
   // 返回公共访问链接
-  // 注意：需要在 R2 设置中开启 "Public Access" 或绑定自定义域名
-  // 假设 R2 绑定的域名是 r2.yourdomain.com
-  // 如果没有绑定域名，可以使用 worker 代理访问，这里假设已配置好公共域名
-  const R2_PUBLIC_DOMAIN = 'https://pic.turbo.netlib.re'; // 替换为你实际的 R2 域名
-  return `${R2_PUBLIC_DOMAIN}/${key}`;
+  // 优先使用环境变量中的域名，如果没有则使用默认的 R2.dev 子域名
+  const domain = env.R2_PUBLIC_DOMAIN || 'https://pub-343c61f80e334876acc3e921f3714ad0.r2.dev';
+  return `${domain}/${key}`;
 }
