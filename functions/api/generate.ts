@@ -1,5 +1,6 @@
 import { Env, GenerateRequest } from '../types';
 import { buildPrompt } from '../lib/prompts';
+import { KeyManager } from '../lib/key-manager';
 import { GeminiModel } from '../lib/gemini'; 
 import { saveImageToR2 } from '../lib/storage';
 
@@ -13,26 +14,35 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       return new Response(JSON.stringify({ error: 'Character name is required' }), { status: 400 });
     }
 
-    // 2. 构建提示词
+    // 2. 初始化密钥管理器 (支持多密钥轮询)
+    const keyManager = new KeyManager(env.GEMINI_API_KEY);
+    const selectedKey = keyManager.getNextKey();
+
+    // 3. 构建提示词
     const prompt = buildPrompt(body.character_name, body.style);
 
-    // 3. 调用 AI 模型 (Gemini)
+    // 4. 调用 AI 模型 (使用轮询选择的密钥)
     // 使用环境变量动态配置模型
-    const modelName = env.AI_MODEL_NAME || 'imagen-3.0-generate-001'; // 默认值
-    const baseUrl = env.AI_MODEL_URL || 'https://generativelanguage.googleapis.com/v1beta'; // 默认值
+    const modelName = env.AI_MODEL_NAME || 'gemini-3-pro-image-preview'; // 默认值
+    const baseUrl = env.AI_MODEL_URL || 'https://generativelanguage.googleapis.com/v1beta/models'; // 默认值
     
-    const aiModel = new GeminiModel(env.GEMINI_API_KEY, modelName, baseUrl); 
+    const aiModel = new GeminiModel(selectedKey, modelName, baseUrl); 
     const imageBuffer = await aiModel.generateImage(prompt);
 
-    // 4. 保存图片到 R2
+    // 5. 保存图片到 R2
     const safeFilename = body.character_name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
     const imageUrl = await saveImageToR2(env, imageBuffer, safeFilename);
 
-    // 5. 返回结果
+    // 6. 返回结果 (包含密钥使用信息用于调试)
     return new Response(JSON.stringify({ 
       success: true, 
       image_url: imageUrl,
-      prompt_used: prompt 
+      prompt_used: prompt,
+      debug: {
+        key_total: keyManager.getKeyCount(),
+        key_used: `...${selectedKey.slice(-6)}`,
+        multi_key_enabled: keyManager.hasMultipleKeys()
+      }
     }), {
       headers: { 'Content-Type': 'application/json' }
     });
