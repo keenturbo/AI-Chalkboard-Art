@@ -1,0 +1,14 @@
+{
+  "name": "ai-chalkboard-art-backend",
+  "version": "1.0.0",
+  "description": "Backend for AI Chalkboard Art using Cloudflare Pages Functions",
+  "scripts": {
+    "dev": "wrangler pages dev public",
+    "deploy": "wrangler pages deploy public"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240208.0",
+    "typescript": "^5.3.3"
+  }
+}
