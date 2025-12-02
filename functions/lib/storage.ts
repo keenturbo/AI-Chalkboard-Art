@@ -22,6 +22,6 @@ export async function saveImageToR2(
   // 注意：需要在 R2 设置中开启 "Public Access" 或绑定自定义域名
   // 假设 R2 绑定的域名是 r2.yourdomain.com
   // 如果没有绑定域名，可以使用 worker 代理访问，这里假设已配置好公共域名
-  const R2_PUBLIC_DOMAIN = 'https://r2.keenturbo.com'; // 替换为你实际的 R2 域名
+  const R2_PUBLIC_DOMAIN = 'https://pic.turbo.netlib.re'; // 替换为你实际的 R2 域名
   return `${R2_PUBLIC_DOMAIN}/${key}`;
 }
