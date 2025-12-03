@@ -78,28 +78,41 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     // 4. 选择API服务（修复API密钥检查逻辑）
     let imageBuffer;
     let usedApi = 'Google Gemini';
+    let allErrors = []; // 收集所有错误信息
+    
+    // 优先检查环境变量是否有Gemini API密钥
+    const hasGeminiKey = env.GEMINI_API_KEY && env.GEMINI_API_KEY.trim().length > 0;
+    console.log('环境变量Gemini API密钥状态:', !!env.GEMINI_API_KEY, '长度:', env.GEMINI_API_KEY?.length || 0);
     
     if (adminConfig?.api_configs && adminConfig.api_configs.length > 0) {
-      // 使用管理员配置的API服务 - 修复：不强制要求key字段
+      // 使用管理员配置的API服务
       const enabledApis = adminConfig.api_configs.filter(api => api.enabled);
       console.log('可用的API服务数量:', enabledApis.length);
-      console.log('API服务详情:', enabledApis.map(api => ({ name: api.name, hasKey: !!api.key, enabled: api.enabled })));
+      console.log('API服务详情:', enabledApis.map(api => ({ 
+        name: api.name, 
+        hasKey: !!api.key, 
+        keyLength: api.key?.length || 0,
+        enabled: api.enabled 
+      })));
       
       // 优先尝试有key的API
-      const apisWithKey = enabledApis.filter(api => api.key);
-      const apisWithoutKey = enabledApis.filter(api => !api.key);
+      const apisWithKey = enabledApis.filter(api => api.key && api.key.trim().length > 0);
+      const apisWithoutKey = enabledApis.filter(api => !api.key || api.key.trim().length === 0);
       
       // 先尝试有key的配置
       for (const apiConfig of [...apisWithKey, ...apisWithoutKey]) {
         try {
-          console.log(`尝试使用API服务: \({apiConfig.name} (有Key: \){!!apiConfig.key})`);
+          console.log(`尝试使用API服务: ${apiConfig.name} (有Key: ${!!apiConfig.key})`);
           
-          if (apiConfig.key) {
+          if (apiConfig.key && apiConfig.key.trim().length > 0) {
             // 有API密钥，使用GeminiAdvanced
             const aiModel = new GeminiAdvanced(apiConfig);
             imageBuffer = await aiModel.generateImage(prompt);
           } else {
-            // 没有API密钥，使用环境变量的Gemini
+            // 没有API密钥，尝试使用环境变量的Gemini
+            if (!hasGeminiKey) {
+              throw new Error('没有配置环境变量GEMINI_API_KEY');
+            }
             const keyManager = new KeyManager(env.GEMINI_API_KEY);
             const selectedKey = keyManager.getNextKey();
             const modelName = apiConfig.model || env.AI_MODEL_NAME || 'gemini-3-pro-image-preview';
@@ -113,41 +126,69 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
           console.log(`🎉 API服务 ${apiConfig.name} 成功生成图片`);
           break; // 成功则跳出循环
         } catch (error) {
-          console.error(`❌ API服务 ${apiConfig.name} 失败:`, error.message);
+          const errorMsg = `API服务 ${apiConfig.name} 失败: ${error.message}`;
+          console.error(`❌ ${errorMsg}`);
+          allErrors.push(errorMsg);
           continue; // 失败则尝试下一个API
         }
       }
       
-      if (!imageBuffer) {
-        console.log('⚠️ 所有自定义API都失败，尝试默认Gemini');
+      if (!imageBuffer && allErrors.length > 0) {
+        console.log('⚠️ 所有自定义API都失败，错误信息:', allErrors);
       }
     }
     
-    // 如果自定义API都失败或没有配置，使用默认Gemini
+    // 如果自定义API都失败或没有配置，使用默认Gemini（环境变量）
     if (!imageBuffer) {
       try {
-        console.log('使用默认Gemini服务');
+        console.log('使用默认Gemini服务（环境变量）');
+        
+        if (!hasGeminiKey) {
+          throw new Error('环境变量GEMINI_API_KEY未配置或为空');
+        }
+        
         const keyManager = new KeyManager(env.GEMINI_API_KEY);
         const selectedKey = keyManager.getNextKey();
         const modelName = env.AI_MODEL_NAME || 'gemini-3-pro-image-preview';
         const baseUrl = env.AI_MODEL_URL || 'https://generativelanguage.googleapis.com/v1beta/models';
         
-        console.log('Gemini配置:', { model: modelName, baseUrl });
+        console.log('Gemini配置:', { model: modelName, baseUrl, keyLength: selectedKey?.length || 0 });
         
         const aiModel = new GeminiModel(selectedKey, modelName, baseUrl);
         imageBuffer = await aiModel.generateImage(prompt);
-        usedApi = 'Google Gemini (默认)';
+        usedApi = 'Google Gemini (环境变量)';
       } catch (fallbackError) {
         console.error('❌ 默认Gemini也失败:', fallbackError);
-        throw new Error('所有API服务都失败了，请检查API配置');
+        allErrors.push(`默认Gemini失败: ${fallbackError.message}`);
       }
     }
 
-    // 5. 保存图片到 R2
+    // 5. 检查是否成功生成图片
+    if (!imageBuffer) {
+      const errorMessage = allErrors.length > 0 
+        ? `所有API服务都失败了:\n${allErrors.join('\n')}\n\n请检查:\n1. 环境变量GEMINI_API_KEY是否正确配置\n2. 管理员后台的API配置是否完整`
+        : '图片生成失败，请重试';
+      
+      console.error('❌ 所有API都失败了，详细错误:', allErrors);
+      
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: '所有API服务都失败了，请检查API配置',
+        details: errorMessage,
+        errors: allErrors,
+        debug: {
+          hasGeminiKey: hasGeminiKey,
+          configuredApis: adminConfig?.api_configs?.length || 0,
+          promptLength: prompt.length
+        }
+      }), { status: 500 });
+    }
+
+    // 6. 保存图片到 R2
     const safeFilename = body.character_name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
     const imageUrl = await saveImageToR2(env, imageBuffer, safeFilename);
 
-    // 6. 返回结果
+    // 7. 返回结果
     return new Response(JSON.stringify({ 
       success: true, 
       image_url: imageUrl,
