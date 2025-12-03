@@ -92,12 +92,26 @@
             0%, 50%, 100% { transform: translateY(0px); }
             25%, 75% { transform: translateY(-3px); }
         }
+        /* 新增样式 */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .hover-scale {
+            transition: transform 0.3s ease;
+        }
+        .hover-scale:hover {
+            transform: scale(1.05);
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4 relative">
 
     <!-- 主容器 -->
-    <div class="w-full max-w-4xl bg-[#18181b] border border-gray-800 rounded-2xl shadow-2xl overflow-hidden z-10">
+    <div class="w-full max-w-4xl bg-[#18181b] border border-gray-800 rounded-2xl shadow-2xl overflow-hidden z-10 fade-in">
         
         <!-- 头部区域 -->
         <div class="p-8 border-b border-gray-800 text-center">
@@ -140,7 +154,7 @@
                     <!-- 生成按钮 -->
                     <div>
                         <button type="submit" id="generateBtn"
-                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed hover-scale">
                             <span>生成作品</span>
                         </button>
                         <!-- 计数器显示 -->
@@ -209,15 +223,14 @@
                 
                 <!-- 操作栏：只有下载按钮 -->
                 <div id="actionToolbar" class="hidden absolute bottom-4 right-4">
-                    <!-- 下载按钮 -->
-                    <a id="downloadBtn" 
-                        class="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white p-2 rounded-full transition download-btn flex items-center justify-center" 
-                        title="下载图片"
-                        target="_blank">
+                    <!-- 下载按钮 - 改为普通按钮，移除target="_blank" -->
+                    <button id="downloadBtn" 
+                        class="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white p-3 rounded-full transition download-btn flex items-center justify-center" 
+                        title="下载图片">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                         </svg>
-                    </a>
+                    </button>
                 </div>
             </div>
         </div>
@@ -315,6 +328,50 @@
             carouselContainer.innerHTML = images.slice(0, 4).map((src, index) => `
                 <img src="${src}" class="carousel-image" alt="作品示例 ${index + 1}">
             `).join('');
+        }
+
+        // === 下载图片函数：使用 fetch + blob 方式 ===
+        async function downloadImage(url, filename) {
+            try {
+                // showStatus('正在准备下载...', 'info');
+                
+                // 使用 fetch 获取图片数据
+                const response = await fetch(url, {
+                    mode: 'cors',
+                    credentials: 'omit'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                // 转换为 blob
+                const blob = await response.blob();
+                
+                // 创建下载链接
+                const downloadUrl = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = downloadUrl;
+                link.download = filename;
+                
+                // 触发下载
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                // 清理资源
+                URL.revokeObjectURL(downloadUrl);
+                
+                // showStatus('下载成功！', 'info');
+                setTimeout(() => showStatus(null), 2000);
+                
+            } catch (error) {
+                console.error('下载失败:', error);
+                showStatus('下载失败，正在打开新窗口...', 'error');
+                
+                // 降级方案：直接打开新窗口
+                window.open(url, '_blank');
+            }
         }
 
         // === 每日限额逻辑 ===
@@ -435,9 +492,11 @@
 
                     resultImage.src = data.image_url;
                     
-                    // 设置下载链接 - 直接使用生成图片链接并添加download属性
-                    downloadBtn.href = data.image_url;
-                    downloadBtn.download = `ai-chalkboard-${character}-${style}.jpg`;
+                    // 设置下载按钮点击事件
+                    downloadBtn.onclick = () => {
+                        const filename = `ai-chalkboard-${character.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '-')}-${style}.jpg`;
+                        downloadImage(data.image_url, filename);
+                    };
                     
                     resultImage.onload = () => {
                         setLoading(false);
@@ -506,6 +565,24 @@
         // 初始化
         updateCounterUI();
         updateCarousel();
+
+        // 添加键盘快捷键支持
+        document.addEventListener('keydown', function(e) {
+            // Ctrl+Enter 或 Cmd+Enter 提交表单
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                form.dispatchEvent(new Event('submit'));
+            }
+            // ESC 关闭弹窗
+            if (e.key === 'Escape') {
+                closeLimitModal();
+            }
+        });
+
+        // 添加页面加载动画
+        window.addEventListener('load', function() {
+            document.querySelector('.fade-in')?.classList.add('fade-in');
+        });
     </script>
 </body>
 </html>
