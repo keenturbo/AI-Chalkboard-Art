@@ -54,7 +54,7 @@
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
         }
-        /* 走马灯动画 - 调整每张图片显示时间改为30秒，展示时间更长 */
+        /* 走马灯动画 - 调整每张图片显示时间改为45秒，展示时间更长 */
         .carousel-container {
             position: relative;
             width: 100%;
@@ -66,7 +66,7 @@
         .carousel-image {
             position: absolute;
             opacity: 0;
-            animation: carousel-fade 30s infinite;
+            animation: carousel-fade 45s infinite;
             border-radius: 1rem;
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
             border: 1px solid rgba(55, 65, 81, 0.5);
@@ -75,40 +75,40 @@
             object-fit: contain;
         }
         .carousel-image:nth-child(1) { animation-delay: 0s; }
-        .carousel-image:nth-child(2) { animation-delay: 1s; }
-        .carousel-image:nth-child(3) { animation-delay: 2s; }
-        .carousel-image:nth-child(4) { animation-delay: 3s; }
-        .carousel-image:nth-child(5) { animation-delay: 4s; }
-        .carousel-image:nth-child(6) { animation-delay: 5s; }
-        .carousel-image:nth-child(7) { animation-delay: 6s; }
-        .carousel-image:nth-child(8) { animation-delay: 7s; }
-        .carousel-image:nth-child(9) { animation-delay: 8s; }
-        .carousel-image:nth-child(10) { animation-delay: 9s; }
-        .carousel-image:nth-child(11) { animation-delay: 10s; }
-        .carousel-image:nth-child(12) { animation-delay: 11s; }
-        .carousel-image:nth-child(13) { animation-delay: 12s; }
-        .carousel-image:nth-child(14) { animation-delay: 13s; }
-        .carousel-image:nth-child(15) { animation-delay: 14s; }
-        .carousel-image:nth-child(16) { animation-delay: 15s; }
-        .carousel-image:nth-child(17) { animation-delay: 16s; }
-        .carousel-image:nth-child(18) { animation-delay: 17s; }
-        .carousel-image:nth-child(19) { animation-delay: 18s; }
-        .carousel-image:nth-child(20) { animation-delay: 19s; }
-        .carousel-image:nth-child(21) { animation-delay: 20s; }
-        .carousel-image:nth-child(22) { animation-delay: 21s; }
-        .carousel-image:nth-child(23) { animation-delay: 22s; }
-        .carousel-image:nth-child(24) { animation-delay: 23s; }
-        .carousel-image:nth-child(25) { animation-delay: 24s; }
-        .carousel-image:nth-child(26) { animation-delay: 25s; }
-        .carousel-image:nth-child(27) { animation-delay: 26s; }
-        .carousel-image:nth-child(28) { animation-delay: 27s; }
-        .carousel-image:nth-child(29) { animation-delay: 28s; }
-        .carousel-image:nth-child(30) { animation-delay: 29s; }
+        .carousel-image:nth-child(2) { animation-delay: 1.5s; }
+        .carousel-image:nth-child(3) { animation-delay: 3s; }
+        .carousel-image:nth-child(4) { animation-delay: 4.5s; }
+        .carousel-image:nth-child(5) { animation-delay: 6s; }
+        .carousel-image:nth-child(6) { animation-delay: 7.5s; }
+        .carousel-image:nth-child(7) { animation-delay: 9s; }
+        .carousel-image:nth-child(8) { animation-delay: 10.5s; }
+        .carousel-image:nth-child(9) { animation-delay: 12s; }
+        .carousel-image:nth-child(10) { animation-delay: 13.5s; }
+        .carousel-image:nth-child(11) { animation-delay: 15s; }
+        .carousel-image:nth-child(12) { animation-delay: 16.5s; }
+        .carousel-image:nth-child(13) { animation-delay: 18s; }
+        .carousel-image:nth-child(14) { animation-delay: 19.5s; }
+        .carousel-image:nth-child(15) { animation-delay: 21s; }
+        .carousel-image:nth-child(16) { animation-delay: 22.5s; }
+        .carousel-image:nth-child(17) { animation-delay: 24s; }
+        .carousel-image:nth-child(18) { animation-delay: 25.5s; }
+        .carousel-image:nth-child(19) { animation-delay: 27s; }
+        .carousel-image:nth-child(20) { animation-delay: 28.5s; }
+        .carousel-image:nth-child(21) { animation-delay: 30s; }
+        .carousel-image:nth-child(22) { animation-delay: 31.5s; }
+        .carousel-image:nth-child(23) { animation-delay: 33s; }
+        .carousel-image:nth-child(24) { animation-delay: 34.5s; }
+        .carousel-image:nth-child(25) { animation-delay: 36s; }
+        .carousel-image:nth-child(26) { animation-delay: 37.5s; }
+        .carousel-image:nth-child(27) { animation-delay: 39s; }
+        .carousel-image:nth-child(28) { animation-delay: 40.5s; }
+        .carousel-image:nth-child(29) { animation-delay: 42s; }
+        .carousel-image:nth-child(30) { animation-delay: 43.5s; }
         
         @keyframes carousel-fade {
             0%, 3% { opacity: 0; transform: scale(0.8); }
-            8%, 17% { opacity: 1; transform: scale(1); } /* 每张图显示2.7秒 */
-            18%, 100% { opacity: 0; transform: scale(0.8); }
+            17%, 28% { opacity: 1; transform: scale(1); } /* 每张图显示4.95秒 */
+            29%, 100% { opacity: 0; transform: scale(0.8); }
         }
         /* 下载按钮动画 */
         .download-btn {
@@ -378,6 +378,7 @@
             'https://pic.icon.pp.ua/generated/IMG_4885.jpeg',
             'https://pic.icon.pp.ua/generated/IMG_4886.jpeg',
             'https://pic.icon.pp.ua/generated/IMG_4887.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4889.jpeg',
             'https://pic.icon.pp.ua/generated/IMG_4890.jpeg',
             'https://pic.icon.pp.ua/generated/IMG_4891.jpeg',
             'https://pic.icon.pp.ua/generated/IMG_4892.jpeg',
@@ -425,15 +426,16 @@
         // === 更新走马灯图片 ===
         function updateCarousel(includeLatest = false) {
             const images = getCarouselImages(includeLatest);
-            carouselContainer.innerHTML = images.map((src, index) => `
-                <img src="${src}" class="carousel-image" alt="作品示例 ${index + 1}">
-            `).join('');
+            carouselContainer.innerHTML = images.map((src, index) => {
+                const img = `<img src="${src}" class="carousel-image" alt="作品示例 ${index + 1}" onerror="this.onerror=null; console.error('跑马灯图片加载失败:', '${src}'); this.src='https://pic.icon.pp.ua/generated/IMG_4837.jpeg';">`;
+                return img;
+            }).join('');
         }
 
         // === 下载图片函数：使用 fetch + blob 方式 ===
         async function downloadImage(url, filename) {
             try {
-                // showStatus('正在准备下载...', 'info');
+                console.log('开始下载图片:', url);
                 
                 // 使用 fetch 获取图片数据
                 const response = await fetch(url, {
@@ -462,8 +464,7 @@
                 // 清理资源
                 URL.revokeObjectURL(downloadUrl);
                 
-                // showStatus('下载成功！', 'info');
-                setTimeout(() => showStatus(null), 2000);
+                console.log('图片下载成功:', filename);
                 
             } catch (error) {
                 console.error('下载失败:', error);
@@ -562,6 +563,9 @@
             }, 1500);
 
             try {
+                // 添加调试：记录请求参数
+                console.log('开始生成图片请求:', { character, style });
+                
                 const response = await fetch('/api/generate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -571,18 +575,48 @@
                     })
                 });
 
-                clearInterval(stepInterval);
-
+                // 添加调试：检查响应状态
+                console.log('收到API响应:', response.status, response.statusText);
+                
                 if (!response.ok) {
                     const errorData = await response.json();
+                    console.error('API错误响应:', errorData);
                     throw new Error(errorData.error || '生成失败');
                 }
 
                 const data = await response.json();
+                console.log('API响应数据:', data);
+
+                // 添加超时机制：30秒超时
+                const timeout = setTimeout(() => {
+                    console.error('请求超时:', { url: '/api/generate', character, style });
+                }, 30000);
 
                 if (data.image_url) {
+                    clearTimeout(timeout);
+                    
                     // 3. 成功生成，扣除额度
                     incrementUsage();
+
+                    // 添加调试：监控图片加载
+                    console.log('开始加载生成图片:', data.image_url);
+                    
+                    const img = new Image();
+                    img.onload = () => {
+                        console.log('生成图片加载成功:', data.image_url);
+                    };
+                    img.onerror = (error) => {
+                        console.error('生成图片加载失败:', error, data.image_url);
+                        // 重试逻辑
+                        setTimeout(() => {
+                            console.log('重试加载:', data.image_url);
+                            const retryImg = new Image();
+                            retryImg.onload = () => console.log('重试成功:', data.image_url);
+                            retryImg.src = data.image_url;
+                            resultImg.src = data.image_url;
+                        }, 2000);
+                    };
+                    img.src = data.image_url;
 
                     // 缓存最新作品到sessionStorage，供走马灯使用
                     const recentWorks = JSON.parse(sessionStorage.getItem('recentWorks') || '[]');
@@ -611,6 +645,7 @@
                         showStatus('图片加载失败，请检查 R2 配置', 'error');
                     };
                 } else {
+                    clearTimeout(timeout);
                     throw new Error('未返回图片URL');
                 }
 
