@@ -75,14 +75,40 @@
             object-fit: contain;
         }
         .carousel-image:nth-child(1) { animation-delay: 0s; }
-        .carousel-image:nth-child(2) { animation-delay: 2s; }
-        .carousel-image:nth-child(3) { animation-delay: 4s; }
-        .carousel-image:nth-child(4) { animation-delay: 6s; }
+        .carousel-image:nth-child(2) { animation-delay: 2.67s; }
+        .carousel-image:nth-child(3) { animation-delay: 5.33s; }
+        .carousel-image:nth-child(4) { animation-delay: 8s; }
+        .carousel-image:nth-child(5) { animation-delay: 10.67s; }
+        .carousel-image:nth-child(6) { animation-delay: 13.33s; }
+        .carousel-image:nth-child(7) { animation-delay: 16s; }
+        .carousel-image:nth-child(8) { animation-delay: 18.67s; }
+        .carousel-image:nth-child(9) { animation-delay: 21.33s; }
+        .carousel-image:nth-child(10) { animation-delay: 24s; }
+        .carousel-image:nth-child(11) { animation-delay: 26.67s; }
+        .carousel-image:nth-child(12) { animation-delay: 29.33s; }
+        .carousel-image:nth-child(13) { animation-delay: 32s; }
+        .carousel-image:nth-child(14) { animation-delay: 34.67s; }
+        .carousel-image:nth-child(15) { animation-delay: 37.33s; }
+        .carousel-image:nth-child(16) { animation-delay: 40s; }
+        .carousel-image:nth-child(17) { animation-delay: 42.67s; }
+        .carousel-image:nth-child(18) { animation-delay: 45.33s; }
+        .carousel-image:nth-child(19) { animation-delay: 48s; }
+        .carousel-image:nth-child(20) { animation-delay: 50.67s; }
+        .carousel-image:nth-child(21) { animation-delay: 53.33s; }
+        .carousel-image:nth-child(22) { animation-delay: 56s; }
+        .carousel-image:nth-child(23) { animation-delay: 58.67s; }
+        .carousel-image:nth-child(24) { animation-delay: 61.33s; }
+        .carousel-image:nth-child(25) { animation-delay: 64s; }
+        .carousel-image:nth-child(26) { animation-delay: 66.67s; }
+        .carousel-image:nth-child(27) { animation-delay: 69.33s; }
+        .carousel-image:nth-child(28) { animation-delay: 72s; }
+        .carousel-image:nth-child(29) { animation-delay: 74.67s; }
+        .carousel-image:nth-child(30) { animation-delay: 77.33s; }
         
         @keyframes carousel-fade {
-            0%, 20% { opacity: 0; transform: scale(0.8); }
-            25%, 45% { opacity: 1; transform: scale(1); }
-            50%, 100% { opacity: 0; transform: scale(0.8); }
+            0%, 3.33% { opacity: 0; transform: scale(0.8); }
+            4.17%, 8.33% { opacity: 1; transform: scale(1); }
+            9.17%, 100% { opacity: 0; transform: scale(0.8); }
         }
         /* 下载按钮动画 */
         .download-btn {
@@ -191,15 +217,9 @@
 
                 <!-- 加载中：优化版走马灯 -->
                 <div id="loadingState" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-[#0f0f10] z-10">
-                    <!-- 走马灯背景 -->
+                    <!-- 走马灯背景 - 30个 -->
                     <div id="carouselContainer" class="carousel-container mb-6">
-                        <!-- 正确的6张示例图 -->
-                        <img src="https://pic.icon.pp.ua/generated/IMG_4837.jpeg" class="carousel-image" alt="作品示例">
-                        <img src="https://pic.icon.pp.ua/generated/IMG_4855.jpeg" class="carousel-image" alt="作品示例">
-                        <img src="https://pic.icon.pp.ua/generated/IMG_4856.jpeg" class="carousel-image" alt="作品示例">
-                        <img src="https://pic.icon.pp.ua/generated/IMG_4863.jpeg" class="carousel-image" alt="作品示例">
-                        <img src="https://pic.icon.pp.ua/generated/IMG_4867.jpeg" class="carousel-image" alt="作品示例">
-                        <img src="https://pic.icon.pp.ua/generated/IMG_4849.jpeg" class="carousel-image" alt="作品示例">
+                        <!-- 图片将由JavaScript动态生成 -->
                     </div>
                     
                     <!-- 进度信息 -->
@@ -301,31 +321,87 @@
 
         const MAX_DAILY_LIMIT = 3;
 
-        // === 作品走马灯数据：始终使用示例图片 ===
-        const SAMPLE_IMAGES = [
+        // === 50张精选作品图片池 ===
+        const GALLERY_POOL = [
             'https://pic.icon.pp.ua/generated/IMG_4837.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4839.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4840.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4841.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4848.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4849.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4853.jpeg',
             'https://pic.icon.pp.ua/generated/IMG_4855.jpeg',
             'https://pic.icon.pp.ua/generated/IMG_4856.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4857.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4860.jpeg',
             'https://pic.icon.pp.ua/generated/IMG_4863.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4865.jpeg',
             'https://pic.icon.pp.ua/generated/IMG_4867.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4849.jpeg'
+            'https://pic.icon.pp.ua/generated/IMG_4869.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4870.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4871.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4872.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4874.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4875.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4876.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4877.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4879.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4880.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4881.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4882.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4883.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4884.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4885.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4886.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4887.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4890.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4891.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4892.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4893.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4894.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4895.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4896.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4899.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4900.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4901.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4902.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4905.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4906.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4907.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4908.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4909.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4910.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4911.jpeg',
+            'https://pic.icon.pp.ua/generated/IMG_4912.jpeg'
         ];
 
-        // 获取最近的生成作品（如果需要动态加载）
-        async function loadRecentWorks() {
-            // 轻量级实现：仅当有新作品时缓存最近3张到sessionStorage，减少重复请求
-            const recentWorks = JSON.parse(sessionStorage.getItem('recentWorks') || '[]');
+        // === 获取走马灯图片列表 ===
+        function getCarouselImages(includeLatest = false) {
+            let images = [];
             
-            if (recentWorks.length === 0) {
-                return SAMPLE_IMAGES;
+            if (includeLatest) {
+                // 获取用户最近生成的作品（最多3张）
+                const recentWorks = JSON.parse(sessionStorage.getItem('recentWorks') || '[]');
+                images = [...recentWorks];
             }
-            return [...recentWorks, ...SAMPLE_IMAGES].slice(0, 8);
+            
+            // 从精选池中随机选择剩余的图片，凑够30张
+            const pool = GALLERY_POOL.filter(img => !images.includes(img)); // 去重
+            const needed = 30 - images.length;
+            
+            if (needed > 0) {
+                // 随机打乱池并取前needed张
+                const shuffled = [...pool].sort(() => Math.random() - 0.5);
+                images = images.concat(shuffled.slice(0, needed));
+            }
+            
+            return images.slice(0, 30); // 确保最多30张
         }
 
-        // 更新走马灯图片
-        async function updateCarousel() {
-            const images = await loadRecentWorks();
-            carouselContainer.innerHTML = images.slice(0, 4).map((src, index) => `
+        // === 更新走马灯图片 ===
+        function updateCarousel(includeLatest = false) {
+            const images = getCarouselImages(includeLatest);
+            carouselContainer.innerHTML = images.map((src, index) => `
                 <img src="${src}" class="carousel-image" alt="作品示例 ${index + 1}">
             `).join('');
         }
@@ -446,8 +522,9 @@
             setLoading(true);
             showStatus(null);
             
-            // 更新走马灯，展示新作品
-            await updateCarousel();
+            // 判断是否为第二次及以上生成，包含最新作品
+            const usageCount = getDailyUsage();
+            updateCarousel(usageCount > 0);
             
             const steps = updateLoadingSteps(style);
             let stepIndex = 0;
@@ -492,9 +569,9 @@
 
                     resultImage.src = data.image_url;
                     
-                    // 设置下载按钮点击事件
+                    // 设置下载按钮点击事件，修复文件后缀问题
                     downloadBtn.onclick = () => {
-                        const filename = `ai-chalkboard-${character.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '-')}-${style}.jpg`;
+                        const filename = `ai-chalkboard-${character.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '-')}-${style}`;
                         downloadImage(data.image_url, filename);
                     };
                     
