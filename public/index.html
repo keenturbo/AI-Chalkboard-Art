@@ -207,20 +207,16 @@
                 <!-- 结果图片 -->
                 <img id="resultImage" class="hidden max-w-full max-h-[600px] rounded shadow-2xl border border-gray-800 object-contain" alt="Generated Art">
                 
-                <!-- 下载/操作栏：增加直接下载按钮 -->
-                <div id="actionToolbar" class="hidden absolute bottom-4 right-4 flex space-x-2">
-                    <!-- 直接下载按钮 -->
-                    <button id="directDownloadBtn" 
+                <!-- 操作栏：只有下载按钮 -->
+                <div id="actionToolbar" class="hidden absolute bottom-4 right-4">
+                    <!-- 下载按钮 -->
+                    <button id="downloadBtn" 
                         class="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white p-2 rounded-full transition download-btn flex items-center justify-center" 
-                        title="直接下载图片">
+                        title="下载图片">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                         </svg>
                     </button>
-                    <!-- 查看大图按钮 -->
-                    <a id="downloadLink" href="#" target="_blank" class="bg-gray-800 hover:bg-gray-700 text-white p-2 rounded-full transition" title="查看完整尺寸">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-                    </a>
                 </div>
             </div>
         </div>
@@ -282,8 +278,7 @@
         const statusMessage = document.getElementById('statusMessage');
         const loadingStep = document.getElementById('loadingStep');
         const actionToolbar = document.getElementById('actionToolbar');
-        const downloadLink = document.getElementById('downloadLink');
-        const directDownloadBtn = document.getElementById('directDownloadBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
         const limitCounter = document.getElementById('limitCounter');
         const limitModal = document.getElementById('limitModal');
         const donateArea = document.getElementById('donateArea');
@@ -365,14 +360,30 @@
             donateArea.classList.toggle('hidden');
         }
 
-        // === 下载功能：新增直接下载 ===
-        function downloadImage(url, filename) {
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = filename || `ai-chalkboard-${Date.now()}.jpg`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+        // === 下载功能：直接下载 ===
+        async function downloadImage(url, filename) {
+            try {
+                // 获取图片数据
+                const response = await fetch(url);
+                const blob = await response.blob();
+                
+                // 创建临时下载链接
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = filename || `ai-chalkboard-${Date.now()}.jpg`;
+                
+                // 触发下载
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                // 清理URL对象
+                URL.revokeObjectURL(link.href);
+                
+            } catch (error) {
+                console.error('下载失败:', error);
+                alert('下载失败，请重试');
+            }
         }
 
         // === 原有逻辑 ===
@@ -448,10 +459,9 @@
                     }
 
                     resultImage.src = data.image_url;
-                    downloadLink.href = data.image_url;
                     
-                    // 设置直接下载按钮
-                    directDownloadBtn.onclick = () => downloadImage(data.image_url, `ai-chalkboard-${character}-${style}.jpg`);
+                    // 设置下载按钮事件
+                    downloadBtn.onclick = () => downloadImage(data.image_url, `ai-chalkboard-${character}-${style}.jpg`);
                     
                     resultImage.onload = () => {
                         setLoading(false);
