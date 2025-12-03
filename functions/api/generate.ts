@@ -75,33 +75,51 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
     console.log('最终提示词长度:', prompt.length, '前100字符:', prompt.substring(0, 100));
 
-    // 4. 选择API服务（支持多API配置）
+    // 4. 选择API服务（修复API密钥检查逻辑）
     let imageBuffer;
     let usedApi = 'Google Gemini';
     
     if (adminConfig?.api_configs && adminConfig.api_configs.length > 0) {
-      // 使用管理员配置的API服务
-      const enabledApis = adminConfig.api_configs.filter(api => api.enabled && api.key);
+      // 使用管理员配置的API服务 - 修复：不强制要求key字段
+      const enabledApis = adminConfig.api_configs.filter(api => api.enabled);
       console.log('可用的API服务数量:', enabledApis.length);
+      console.log('API服务详情:', enabledApis.map(api => ({ name: api.name, hasKey: !!api.key, enabled: api.enabled })));
       
-      if (enabledApis.length > 0) {
-        for (const apiConfig of enabledApis) {
-          try {
-            console.log(`尝试使用API服务: ${apiConfig.name}`);
+      // 优先尝试有key的API
+      const apisWithKey = enabledApis.filter(api => api.key);
+      const apisWithoutKey = enabledApis.filter(api => !api.key);
+      
+      // 先尝试有key的配置
+      for (const apiConfig of [...apisWithKey, ...apisWithoutKey]) {
+        try {
+          console.log(`尝试使用API服务: \({apiConfig.name} (有Key: \){!!apiConfig.key})`);
+          
+          if (apiConfig.key) {
+            // 有API密钥，使用GeminiAdvanced
             const aiModel = new GeminiAdvanced(apiConfig);
             imageBuffer = await aiModel.generateImage(prompt);
-            usedApi = apiConfig.name;
-            console.log(`🎉 API服务 ${apiConfig.name} 成功生成图片`);
-            break; // 成功则跳出循环
-          } catch (error) {
-            console.error(`❌ API服务 ${apiConfig.name} 失败:`, error.message);
-            continue; // 失败则尝试下一个API
+          } else {
+            // 没有API密钥，使用环境变量的Gemini
+            const keyManager = new KeyManager(env.GEMINI_API_KEY);
+            const selectedKey = keyManager.getNextKey();
+            const modelName = apiConfig.model || env.AI_MODEL_NAME || 'gemini-3-pro-image-preview';
+            const baseUrl = apiConfig.url || env.AI_MODEL_URL || 'https://generativelanguage.googleapis.com/v1beta/models';
+            
+            const aiModel = new GeminiModel(selectedKey, modelName, baseUrl);
+            imageBuffer = await aiModel.generateImage(prompt);
           }
+          
+          usedApi = apiConfig.name;
+          console.log(`🎉 API服务 ${apiConfig.name} 成功生成图片`);
+          break; // 成功则跳出循环
+        } catch (error) {
+          console.error(`❌ API服务 ${apiConfig.name} 失败:`, error.message);
+          continue; // 失败则尝试下一个API
         }
-        
-        if (!imageBuffer) {
-          console.log('⚠️ 所有自定义API都失败，尝试默认Gemini');
-        }
+      }
+      
+      if (!imageBuffer) {
+        console.log('⚠️ 所有自定义API都失败，尝试默认Gemini');
       }
     }
     
