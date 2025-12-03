@@ -54,7 +54,7 @@
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
         }
-        /* 走马灯动画 - 调整每张图片显示时间改为45秒，展示时间更长 */
+        /* 轮播容器 - 移除动画，改为静态显示 */
         .carousel-container {
             position: relative;
             width: 100%;
@@ -66,7 +66,7 @@
         .carousel-image {
             position: absolute;
             opacity: 0;
-            animation: carousel-fade 45s infinite;
+            transition: opacity 0.5s ease-in-out;
             border-radius: 1rem;
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
             border: 1px solid rgba(55, 65, 81, 0.5);
@@ -74,41 +74,8 @@
             max-height: 300px;
             object-fit: contain;
         }
-        .carousel-image:nth-child(1) { animation-delay: 0s; }
-        .carousel-image:nth-child(2) { animation-delay: 1.5s; }
-        .carousel-image:nth-child(3) { animation-delay: 3s; }
-        .carousel-image:nth-child(4) { animation-delay: 4.5s; }
-        .carousel-image:nth-child(5) { animation-delay: 6s; }
-        .carousel-image:nth-child(6) { animation-delay: 7.5s; }
-        .carousel-image:nth-child(7) { animation-delay: 9s; }
-        .carousel-image:nth-child(8) { animation-delay: 10.5s; }
-        .carousel-image:nth-child(9) { animation-delay: 12s; }
-        .carousel-image:nth-child(10) { animation-delay: 13.5s; }
-        .carousel-image:nth-child(11) { animation-delay: 15s; }
-        .carousel-image:nth-child(12) { animation-delay: 16.5s; }
-        .carousel-image:nth-child(13) { animation-delay: 18s; }
-        .carousel-image:nth-child(14) { animation-delay: 19.5s; }
-        .carousel-image:nth-child(15) { animation-delay: 21s; }
-        .carousel-image:nth-child(16) { animation-delay: 22.5s; }
-        .carousel-image:nth-child(17) { animation-delay: 24s; }
-        .carousel-image:nth-child(18) { animation-delay: 25.5s; }
-        .carousel-image:nth-child(19) { animation-delay: 27s; }
-        .carousel-image:nth-child(20) { animation-delay: 28.5s; }
-        .carousel-image:nth-child(21) { animation-delay: 30s; }
-        .carousel-image:nth-child(22) { animation-delay: 31.5s; }
-        .carousel-image:nth-child(23) { animation-delay: 33s; }
-        .carousel-image:nth-child(24) { animation-delay: 34.5s; }
-        .carousel-image:nth-child(25) { animation-delay: 36s; }
-        .carousel-image:nth-child(26) { animation-delay: 37.5s; }
-        .carousel-image:nth-child(27) { animation-delay: 39s; }
-        .carousel-image:nth-child(28) { animation-delay: 40.5s; }
-        .carousel-image:nth-child(29) { animation-delay: 42s; }
-        .carousel-image:nth-child(30) { animation-delay: 43.5s; }
-        
-        @keyframes carousel-fade {
-            0%, 3% { opacity: 0; transform: scale(0.8); }
-            17%, 28% { opacity: 1; transform: scale(1); } /* 每张图显示4.95秒 */
-            29%, 100% { opacity: 0; transform: scale(0.8); }
+        .carousel-image.active {
+            opacity: 1;
         }
         /* 下载按钮动画 */
         .download-btn {
@@ -239,11 +206,11 @@
                     </div>
                 </div>
 
-                <!-- 加载中：优化版走马灯 -->
+                <!-- 加载中：静态轮播展示 -->
                 <div id="loadingState" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-[#0f0f10] z-10">
-                    <!-- 走马灯背景 - 30个 -->
+                    <!-- 静态轮播背景 - 单个图片容器 -->
                     <div id="carouselContainer" class="carousel-container mb-6">
-                        <!-- 图片将由JavaScript动态生成 -->
+                        <!-- 图片将由JavaScript轮播管理器动态生成 -->
                     </div>
                     
                     <!-- 进度信息 -->
@@ -400,6 +367,78 @@
             'https://pic.icon.pp.ua/generated/IMG_4912.jpeg'
         ];
 
+        // === 轮播管理器：静态展示 + 预加载系统 ===
+        class CarouselManager {
+            constructor() {
+                this.currentIndex = 0;
+                this.pool = [];
+                this.preloadedImages = new Map();
+                this.scheduleInterval = null;
+                this.isRunning = false;
+            }
+
+            startCarousel(stopTime) {
+                // 检查是否为第二次及以上生成，包含最新作品
+                const usageCount = getDailyUsage();
+                this.pool = getCarouselImages(usageCount > 0);
+                
+                this.stopCarousel();
+                this.isRunning = true;
+                
+                // 初始化轮播容器
+                this.initCarouselContainer();
+                
+                // 立即显示第一张图片
+                this.showImage(0);
+                
+                // 每4秒切换一张图片
+                this.scheduleInterval = setInterval(() => {
+                    if (!this.isRunning || Date.now() >= stopTime) {
+                        this.stopCarousel();
+                        return;
+                    }
+                    
+                    this.currentIndex = (this.currentIndex + 1) % this.pool.length;
+                    this.showImage(this.currentIndex);
+                }, 4000); // 4秒间隔：3.5秒展示 + 0.5秒过渡
+            }
+
+            initCarouselContainer() {
+                // 创建单个img元素用于轮播
+                const img = document.createElement('img');
+                img.className = 'carousel-image active';
+                img.alt = '作品展示';
+                carouselContainer.innerHTML = '';
+                carouselContainer.appendChild(img);
+            }
+
+            stopCarousel() {
+                if (this.scheduleInterval) {
+                    clearInterval(this.scheduleInterval);
+                    this.scheduleInterval = null;
+                }
+                this.isRunning = false;
+            }
+
+            showImage(index) {
+                const imgSrc = this.pool[index];
+                const img = carouselContainer.querySelector('img');
+                
+                if (!img) return;
+                
+                // 重试逻辑
+                img.onerror = () => {
+                    console.error(`轮播图片加载失败: ${imgSrc}`);
+                    img.src = 'https://pic.icon.pp.ua/generated/IMG_4837.jpeg';
+                };
+                
+                img.src = imgSrc;
+            }
+        }
+
+        // 实例化轮播管理器
+        const carouselManager = new CarouselManager();
+
         // === 获取走马灯图片列表 ===
         function getCarouselImages(includeLatest = false) {
             let images = [];
@@ -421,15 +460,6 @@
             }
             
             return images.slice(0, 30); // 确保最多30张
-        }
-
-        // === 更新走马灯图片 ===
-        function updateCarousel(includeLatest = false) {
-            const images = getCarouselImages(includeLatest);
-            carouselContainer.innerHTML = images.map((src, index) => {
-                const img = `<img src="${src}" class="carousel-image" alt="作品示例 ${index + 1}" onerror="this.onerror=null; console.error('跑马灯图片加载失败:', '${src}'); this.src='https://pic.icon.pp.ua/generated/IMG_4837.jpeg';">`;
-                return img;
-            }).join('');
         }
 
         // === 下载图片函数：使用 fetch + blob 方式 ===
@@ -547,9 +577,11 @@
             setLoading(true);
             showStatus(null);
             
-            // 判断是否为第二次及以上生成，包含最新作品
-            const usageCount = getDailyUsage();
-            updateCarousel(usageCount > 0);
+            // 计算停止时间（平均24秒 + 缓冲6秒）
+            const stopTime = Date.now() + 30000; // 30秒后停止
+            
+            // 启动静态轮播
+            carouselManager.startCarousel(stopTime);
             
             const steps = updateLoadingSteps(style);
             let stepIndex = 0;
@@ -613,7 +645,7 @@
                             const retryImg = new Image();
                             retryImg.onload = () => console.log('重试成功:', data.image_url);
                             retryImg.src = data.image_url;
-                            resultImg.src = data.image_url;
+                            resultImage.src = data.image_url;
                         }, 2000);
                     };
                     img.src = data.image_url;
@@ -634,6 +666,8 @@
                     };
                     
                     resultImage.onload = () => {
+                        clearInterval(stepInterval);
+                        carouselManager.stopCarousel();
                         setLoading(false);
                         resultImage.classList.remove('hidden');
                         placeholder.classList.add('hidden');
@@ -641,6 +675,8 @@
                     };
                     
                     resultImage.onerror = () => {
+                        clearInterval(stepInterval);
+                        carouselManager.stopCarousel();
                         setLoading(false);
                         showStatus('图片加载失败，请检查 R2 配置', 'error');
                     };
@@ -651,6 +687,7 @@
 
             } catch (error) {
                 clearInterval(stepInterval);
+                carouselManager.stopCarousel();
                 setLoading(false);
                 showStatus(error.message, 'error');
                 console.error('生成错误:', error);
@@ -700,7 +737,6 @@
 
         // 初始化
         updateCounterUI();
-        updateCarousel();
 
         // 添加键盘快捷键支持
         document.addEventListener('keydown', function(e) {
