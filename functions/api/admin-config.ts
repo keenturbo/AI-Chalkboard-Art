@@ -87,19 +87,19 @@ const DEFAULT_CONFIG: AdminConfig = {
     ],
     prompts: [
         {
-            name: '黑板粉笔画',
+            name: '🏫 黑板粉笔画',
             key: 'blackboard',
-            prompt: ''
+            prompt: '黑板粉笔画'
         },
         {
-            name: '现实主义云彩',
+            name: '☁️ 现实主义云彩',
             key: 'cloud',
-            prompt: ''
+            prompt: '现实主义云彩'
         },
         {
-            name: '课本铅笔画',
+            name: '✏️ 课本铅笔画',
             key: 'textbook',
-            prompt: ''
+            prompt: '课本铅笔画'
         }
     ],
     admin_credentials: {
@@ -143,6 +143,76 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 };
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
+    try {
+        const { request, env } = context;
+        const body = await request.json();
+        
+        // 验证权限
+        if (!body.username || !body.password) {
+            return new Response(JSON.stringify({ error: '需要用户名和密码' }), {
+                status: 401,
+                headers: { 'Content-Type': 'application/json' }
+            });
+        }
+        
+        // 获取当前配置进行验证
+        let config: AdminConfig = DEFAULT_CONFIG;
+        try {
+            const stored = await env.ADMIN_KV.get('admin_config');
+            if (stored) {
+                config = JSON.parse(stored);
+            }
+        } catch (error) {
+            console.error('读取配置失败:', error);
+        }
+        
+        // 验证管理员凭证
+        if (body.username !== config.admin_credentials.username || 
+            body.password !== config.admin_credentials.password) {
+            return new Response(JSON.stringify({ error: '用户名或密码错误' }), {
+                status: 401,
+                headers: { 'Content-Type': 'application/json' }
+            });
+        }
+        
+        // 更新配置
+        if (body.config) {
+            try {
+                await env.ADMIN_KV.put('admin_config', JSON.stringify(body.config));
+                return new Response(JSON.stringify({ success: true, message: '配置更新成功' }), {
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    }
+                });
+            } catch (error) {
+                console.error('保存配置失败:', error);
+                return new Response(JSON.stringify({ error: '保存配置失败' }), {
+                    status: 500,
+                    headers: { 'Content-Type': 'application/json' }
+                });
+            }
+        }
+        
+        // 只返回配置（用于验证）
+        return new Response(JSON.stringify(config), {
+            headers: { 
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            }
+        });
+        
+    } catch (error) {
+        console.error('保存配置失败:', error);
+        return new Response(JSON.stringify({ error: '保存配置失败' }), { 
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+        });
+    }
+};
+
+// 新增：添加 PUT 方法支持
+export const onRequestPut: PagesFunction<Env> = async (context) => {
     try {
         const { request, env } = context;
         const body = await request.json();
