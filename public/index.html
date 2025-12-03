@@ -54,7 +54,7 @@
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
         }
-        /* 走马灯动画 */
+        /* 走马灯动画 - 调整每张图片显示时间从8秒改为12秒 */
         .carousel-container {
             position: relative;
             width: 100%;
@@ -66,7 +66,7 @@
         .carousel-image {
             position: absolute;
             opacity: 0;
-            animation: carousel-fade 8s infinite;
+            animation: carousel-fade 12s infinite;
             border-radius: 1rem;
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
             border: 1px solid rgba(55, 65, 81, 0.5);
@@ -75,40 +75,40 @@
             object-fit: contain;
         }
         .carousel-image:nth-child(1) { animation-delay: 0s; }
-        .carousel-image:nth-child(2) { animation-delay: 2.67s; }
-        .carousel-image:nth-child(3) { animation-delay: 5.33s; }
-        .carousel-image:nth-child(4) { animation-delay: 8s; }
-        .carousel-image:nth-child(5) { animation-delay: 10.67s; }
-        .carousel-image:nth-child(6) { animation-delay: 13.33s; }
-        .carousel-image:nth-child(7) { animation-delay: 16s; }
-        .carousel-image:nth-child(8) { animation-delay: 18.67s; }
-        .carousel-image:nth-child(9) { animation-delay: 21.33s; }
-        .carousel-image:nth-child(10) { animation-delay: 24s; }
-        .carousel-image:nth-child(11) { animation-delay: 26.67s; }
-        .carousel-image:nth-child(12) { animation-delay: 29.33s; }
-        .carousel-image:nth-child(13) { animation-delay: 32s; }
-        .carousel-image:nth-child(14) { animation-delay: 34.67s; }
-        .carousel-image:nth-child(15) { animation-delay: 37.33s; }
-        .carousel-image:nth-child(16) { animation-delay: 40s; }
-        .carousel-image:nth-child(17) { animation-delay: 42.67s; }
-        .carousel-image:nth-child(18) { animation-delay: 45.33s; }
-        .carousel-image:nth-child(19) { animation-delay: 48s; }
-        .carousel-image:nth-child(20) { animation-delay: 50.67s; }
-        .carousel-image:nth-child(21) { animation-delay: 53.33s; }
-        .carousel-image:nth-child(22) { animation-delay: 56s; }
-        .carousel-image:nth-child(23) { animation-delay: 58.67s; }
-        .carousel-image:nth-child(24) { animation-delay: 61.33s; }
-        .carousel-image:nth-child(25) { animation-delay: 64s; }
-        .carousel-image:nth-child(26) { animation-delay: 66.67s; }
-        .carousel-image:nth-child(27) { animation-delay: 69.33s; }
-        .carousel-image:nth-child(28) { animation-delay: 72s; }
-        .carousel-image:nth-child(29) { animation-delay: 74.67s; }
-        .carousel-image:nth-child(30) { animation-delay: 77.33s; }
+        .carousel-image:nth-child(2) { animation-delay: 4s; }
+        .carousel-image:nth-child(3) { animation-delay: 8s; }
+        .carousel-image:nth-child(4) { animation-delay: 12s; }
+        .carousel-image:nth-child(5) { animation-delay: 16s; }
+        .carousel-image:nth-child(6) { animation-delay: 20s; }
+        .carousel-image:nth-child(7) { animation-delay: 24s; }
+        .carousel-image:nth-child(8) { animation-delay: 28s; }
+        .carousel-image:nth-child(9) { animation-delay: 32s; }
+        .carousel-image:nth-child(10) { animation-delay: 36s; }
+        .carousel-image:nth-child(11) { animation-delay: 40s; }
+        .carousel-image:nth-child(12) { animation-delay: 44s; }
+        .carousel-image:nth-child(13) { animation-delay: 48s; }
+        .carousel-image:nth-child(14) { animation-delay: 52s; }
+        .carousel-image:nth-child(15) { animation-delay: 56s; }
+        .carousel-image:nth-child(16) { animation-delay: 60s; }
+        .carousel-image:nth-child(17) { animation-delay: 64s; }
+        .carousel-image:nth-child(18) { animation-delay: 68s; }
+        .carousel-image:nth-child(19) { animation-delay: 72s; }
+        .carousel-image:nth-child(20) { animation-delay: 76s; }
+        .carousel-image:nth-child(21) { animation-delay: 80s; }
+        .carousel-image:nth-child(22) { animation-delay: 84s; }
+        .carousel-image:nth-child(23) { animation-delay: 88s; }
+        .carousel-image:nth-child(24) { animation-delay: 92s; }
+        .carousel-image:nth-child(25) { animation-delay: 96s; }
+        .carousel-image:nth-child(26) { animation-delay: 100s; }
+        .carousel-image:nth-child(27) { animation-delay: 104s; }
+        .carousel-image:nth-child(28) { animation-delay: 108s; }
+        .carousel-image:nth-child(29) { animation-delay: 112s; }
+        .carousel-image:nth-child(30) { animation-delay: 116s; }
         
         @keyframes carousel-fade {
-            0%, 3.33% { opacity: 0; transform: scale(0.8); }
-            4.17%, 8.33% { opacity: 1; transform: scale(1); }
-            9.17%, 100% { opacity: 0; transform: scale(0.8); }
+            0%, 2.5% { opacity: 0; transform: scale(0.8); }
+            3.33%, 6.67% { opacity: 1; transform: scale(1); }
+            7.5%, 100% { opacity: 0; transform: scale(0.8); }
         }
         /* 下载按钮动画 */
         .download-btn {
@@ -131,6 +131,25 @@
         }
         .hover-scale:hover {
             transform: scale(1.05);
+        }
+        /* 占位符背景图样式 */
+        .placeholder-bg {
+            background-image: url('https://pic.icon.pp.ua/generated/IMG_4874.jpeg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            position: relative;
+        }
+        .placeholder-bg::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4); /* 遮罩层 */
+            border-radius: 1rem;
+        }
+        .placeholder-content {
+            position: relative;
+            z-index: 2;
         }
     </style>
 </head>
@@ -207,12 +226,14 @@
             <!-- 右侧：展示区域 -->
             <div class="w-full md:w-2/3 p-8 flex items-center justify-center bg-[#0f0f10] min-h-[500px] relative">
                 
-                <!-- 占位符 -->
-                <div id="placeholder" class="text-center">
-                    <div class="inline-block p-4 rounded-full bg-gray-800 mb-4">
-                        <svg class="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                <!-- 占位符 - 添加背景图 -->
+                <div id="placeholder" class="text-center placeholder-bg w-full h-full flex flex-col items-center justify-center">
+                    <div class="placeholder-content">
+                        <div class="inline-block p-4 rounded-full bg-gray-800/80 backdrop-blur-sm mb-4">
+                            <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        </div>
+                        <p class="text-white text-lg font-medium">您的画作将在这里显示</p>
                     </div>
-                    <p class="text-gray-500">您的画作将在这里显示</p>
                 </div>
 
                 <!-- 加载中：优化版走马灯 -->
@@ -569,7 +590,7 @@
 
                     resultImage.src = data.image_url;
                     
-                    // 设置下载按钮点击事件，修复文件后缀问题
+                    // 设置下载按钮点击事件，修复文件后缀问题 - 删除了.jpg硬编码
                     downloadBtn.onclick = () => {
                         const filename = `ai-chalkboard-${character.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '-')}-${style}`;
                         downloadImage(data.image_url, filename);
@@ -636,7 +657,7 @@
             } else {
                 placeholderText = '您的黑板画作将在这里显示';
             }
-            document.querySelector('#placeholder p').textContent = placeholderText;
+            document.querySelector('#placeholder .placeholder-content p').textContent = placeholderText;
         });
 
         // 初始化
