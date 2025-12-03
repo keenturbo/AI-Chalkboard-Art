@@ -21,7 +21,7 @@ interface AdminConfig {
     };
 }
 
-// 默认配置
+// 默认配置 - 修复：移除空的API密钥
 const DEFAULT_CONFIG: AdminConfig = {
     gallery_images: [
         'https://pic.icon.pp.ua/generated/IMG_4837.jpeg',
@@ -76,15 +76,9 @@ const DEFAULT_CONFIG: AdminConfig = {
         'https://pic.icon.pp.ua/generated/IMG_4911.jpeg',
         'https://pic.icon.pp.ua/generated/IMG_4912.jpeg'
     ],
-    api_configs: [
-        {
-            name: 'Google Gemini',
-            url: 'https://generativelanguage.googleapis.com/v1beta/models',
-            key: '',
-            model: 'gemini-3-pro-image-preview',
-            enabled: true
-        }
-    ],
+    // 关键修复：移除空key的API配置，让系统直接使用环境变量
+    api_configs: [],  // 改为空数组，系统会直接使用环境变量
+    
     prompts: [
         {
             name: '🏫 黑板粉笔画',
