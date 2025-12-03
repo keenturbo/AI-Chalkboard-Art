@@ -1,5 +1,5 @@
 import { Env, GenerateRequest } from '../types';
-import { buildPromptWithConfig, loadPromptsConfig } from '../lib/prompts';
+import { buildPromptWithEnv } from '../lib/prompts';
 import { KeyManager } from '../lib/key-manager';
 import { GeminiModel } from '../lib/gemini'; 
 import { GeminiAdvanced } from '../lib/gemini-advanced';
@@ -26,18 +26,10 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       console.error('加载管理员配置失败，使用默认配置:', error);
     }
 
-    // 3. 加载自定义提示词配置
-    let customPrompts = [];
-    try {
-      customPrompts = await loadPromptsConfig(env);
-    } catch (error) {
-      console.error('加载自定义提示词失败，使用默认提示词:', error);
-    }
+    // 3. 构建提示词（支持自定义提示词）
+    const prompt = await buildPromptWithEnv(body.character_name, body.style, env);
 
-    // 4. 构建提示词（支持自定义提示词）
-    const prompt = buildPromptWithConfig(body.character_name, body.style, customPrompts);
-
-    // 5. 选择API服务（支持多API配置）
+    // 4. 选择API服务（支持多API配置）
     let imageBuffer;
     let usedApi = 'Google Gemini';
     
@@ -72,11 +64,11 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       imageBuffer = await aiModel.generateImage(prompt);
     }
 
-    // 6. 保存图片到 R2
+    // 5. 保存图片到 R2
     const safeFilename = body.character_name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
     const imageUrl = await saveImageToR2(env, imageBuffer, safeFilename);
 
-    // 7. 返回结果
+    // 6. 返回结果
     return new Response(JSON.stringify({ 
       success: true, 
       image_url: imageUrl,
