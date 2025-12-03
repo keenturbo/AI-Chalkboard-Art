@@ -21,7 +21,7 @@ interface AdminConfig {
     };
 }
 
-// 默认配置 - 修复：修改默认用户名为 turbokeem
+// 默认配置 - 保持通用的 admin/admin 作为默认凭证
 const DEFAULT_CONFIG: AdminConfig = {
     gallery_images: [
         'https://pic.icon.pp.ua/generated/IMG_4837.jpeg',
@@ -97,8 +97,8 @@ const DEFAULT_CONFIG: AdminConfig = {
         }
     ],
     admin_credentials: {
-        username: 'turbokeem',  // 修改默认用户名为 turbokeem
-        password: 'admin'       // 密码可以保持为 admin，登录后自己修改
+        username: 'admin',  // 恢复通用的 admin 用户名
+        password: 'admin'   // 通用默认密码，用户首次登录后应立即修改
     }
 };
 
