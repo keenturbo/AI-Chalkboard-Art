@@ -312,60 +312,102 @@
 
         const MAX_DAILY_LIMIT = 3;
 
-        // === 50张精选作品图片池 ===
-        const GALLERY_POOL = [
-            'https://pic.icon.pp.ua/generated/IMG_4837.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4839.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4840.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4841.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4848.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4849.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4853.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4855.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4856.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4857.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4860.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4863.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4865.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4867.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4869.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4870.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4871.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4872.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4874.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4875.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4876.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4877.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4879.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4880.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4881.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4882.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4883.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4884.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4885.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4886.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4887.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4889.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4890.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4891.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4892.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4893.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4894.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4895.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4896.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4899.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4900.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4901.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4902.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4905.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4906.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4907.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4908.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4909.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4910.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4911.jpeg',
-            'https://pic.icon.pp.ua/generated/IMG_4912.jpeg'
-        ];
+        // === 动态加载配置 ===
+        let SITE_CONFIG = {
+            gallery_images: [],
+            prompts: []
+        };
+
+        // 从API加载配置
+        async function loadSiteConfig() {
+            try {
+                const response = await fetch('/api/admin-config');
+                if (response.ok) {
+                    const config = await response.json();
+                    SITE_CONFIG = config;
+                    updateStyleOptions();
+                    console.log('已加载管理员配置');
+                }
+            } catch (error) {
+                console.error('加载配置失败，使用默认配置:', error);
+                // 使用默认配置
+                SITE_CONFIG = {
+                    gallery_images: [
+                        'https://pic.icon.pp.ua/generated/IMG_4837.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4839.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4840.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4841.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4848.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4849.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4853.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4855.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4856.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4857.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4860.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4863.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4865.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4867.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4869.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4870.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4871.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4872.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4874.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4875.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4876.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4877.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4879.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4880.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4881.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4882.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4883.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4884.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4885.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4886.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4887.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4889.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4890.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4891.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4892.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4893.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4894.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4895.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4896.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4899.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4900.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4901.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4902.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4905.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4906.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4907.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4908.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4909.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4910.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4911.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4912.jpeg'
+                    ],
+                    prompts: [
+                        { name: '黑板粉笔画', prompt: 'blackboard' },
+                        { name: '现实主义云彩', prompt: 'cloud' },
+                        { name: '课本铅笔画', prompt: 'textbook' }
+                    ]
+                };
+                updateStyleOptions();
+            }
+        }
+
+        // 更新风格选择器
+        function updateStyleOptions() {
+            const styleSelect = document.getElementById('style');
+            styleSelect.innerHTML = '';
+            
+            SITE_CONFIG.prompts.forEach(prompt => {
+                const option = document.createElement('option');
+                option.value = prompt.prompt;
+                option.textContent = prompt.name;
+                option.selected = prompt.prompt === 'blackboard';
+                styleSelect.appendChild(option);
+            });
+        }
 
         // === 轮播管理器：静态展示 + 预加载系统 ===
         class CarouselManager {
@@ -429,7 +471,7 @@
                 // 重试逻辑
                 img.onerror = () => {
                     console.error(`轮播图片加载失败: ${imgSrc}`);
-                    img.src = 'https://pic.icon.pp.ua/generated/IMG_4837.jpeg';
+                    img.src = SITE_CONFIG.gallery_images[0] || 'https://pic.icon.pp.ua/generated/IMG_4837.jpeg';
                 };
                 
                 img.src = imgSrc;
@@ -442,6 +484,7 @@
         // === 获取走马灯图片列表 ===
         function getCarouselImages(includeLatest = false) {
             let images = [];
+            const GALLERY_POOL = SITE_CONFIG.gallery_images;
             
             if (includeLatest) {
                 // 获取用户最近生成的作品（最多3张）
@@ -754,6 +797,11 @@
         // 添加页面加载动画
         window.addEventListener('load', function() {
             document.querySelector('.fade-in')?.classList.add('fade-in');
+        });
+
+        // 页面加载时初始化配置
+        window.addEventListener('DOMContentLoaded', function() {
+            loadSiteConfig();
         });
     </script>
 </body>
