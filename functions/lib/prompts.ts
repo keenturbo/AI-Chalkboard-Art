@@ -1,10 +1,48 @@
-import { Env, PromptConfig } from '../types';
+import { Env } from '../types';
+
+// 提示词配置接口
+interface PromptConfig {
+    name: string;
+    key: string;     // 键值（blackboard、cloud等）
+    prompt: string;  // 完整提示词内容
+}
 
 /**
- * 提示词管理器
- * 根据用户输入和选择的风格，构建最终发给 AI 的 Prompt
+ * 动态构建提示词（支持自定义提示词）
+ * 从 KV 存储获取当前配置，支持完整提示词内容
  */
-export function buildPrompt(characterName: string, style: string = 'blackboard'): string {
+export async function buildPromptWithEnv(characterName: string, style: string, env: Env): Promise<string> {
+  try {
+    // 从 KV 获取提示词配置
+    const stored = await env.ADMIN_KV.get('admin_config');
+    if (!stored) {
+      // 回退到默认内置提示词
+      return buildDefaultPrompt(characterName, style);
+    }
+    
+    const config = JSON.parse(stored);
+    const prompts = config.prompts || [];
+    
+    // 查找匹配的自定义提示词
+    const customPrompt = prompts.find(p => p.key === style || p.name === style);
+    if (customPrompt && customPrompt.prompt) {
+      // 有完整自定义提示词，直接使用并替换变量
+      return customPrompt.prompt.replace(/\$\{name\}/g, characterName);
+    }
+    
+    // 回退到内置提示词
+    return buildDefaultPrompt(characterName, style);
+    
+  } catch (error) {
+    console.error('读取提示词配置失败，使用默认配置:', error);
+    return buildDefaultPrompt(characterName, style);
+  }
+}
+
+/**
+ * 默认内置提示词构建
+ */
+function buildDefaultPrompt(characterName: string, style: string): string {
   switch (style.toLowerCase()) {
     case 'cloud':
       return buildCloudPrompt(characterName);
@@ -39,7 +77,7 @@ function buildBlackboardPrompt(name: string): string {
   `.trim();
 }
 
-// 新增：云彩画提示词模板（完整实现）
+// 云彩画提示词模板
 function buildCloudPrompt(name: string): string {
   return `
     "A breathtaking low-angle photograph of a vast sky. 
@@ -52,7 +90,7 @@ function buildCloudPrompt(name: string): string {
   `.trim();
 }
 
-// 新增：课本铅笔画提示词模板（完整实现）
+// 课本铅笔画提示词模板
 function buildTextbookPrompt(name: string): string {
   return `
     "A macro close-up of an open textbook page, focusing on a large printed function graph and geometric shapes. 
@@ -67,62 +105,28 @@ function buildTextbookPrompt(name: string): string {
   `.trim();
 }
 
-// 新增：获取默认提示词配置
+// 保留向后兼容的旧接口
+export function buildPrompt(characterName: string, style: string = 'blackboard'): string {
+  return buildDefaultPrompt(characterName, style);
+}
+
+// 获取默认提示词配置（用于初始化）
 export function getDefaultPrompts(): PromptConfig[] {
   return [
     {
       name: '黑板粉笔画',
-      prompt: 'blackboard'
+      key: 'blackboard',
+      prompt: ''  // 将使用内置模板
     },
     {
       name: '现实主义云彩',
-      prompt: 'cloud'
+      key: 'cloud',
+      prompt: ''  // 将使用内置模板
     },
     {
       name: '课本铅笔画',
-      prompt: 'textbook'
+      key: 'textbook',
+      prompt: ''  // 将使用内置模板
     }
   ];
-}
-
-// 新增：动态构建提示词（支持自定义提示词）
-export function buildPromptWithConfig(characterName: string, style: string, customPrompts: PromptConfig[]): string {
-  // 首先检查自定义提示词
-  const customPrompt = customPrompts.find(p => p.prompt === style);
-  if (customPrompt) {
-    // 自定义提示词暂时使用黑板画模板，但可以进行扩展
-    return buildBlackboardPrompt(characterName).replace('${name}', characterName);
-  }
-  
-  // 回退到内置提示词
-  return buildPrompt(characterName, style);
-}
-
-// 新增：更新提示词配置并重新生成prompts.ts文件
-export async function updatePromptsConfig(env: Env, prompts: PromptConfig[]): Promise<void> {
-  try {
-    // 保存到KV存储
-    await env.ADMIN_KV.put('prompts_config', JSON.stringify(prompts));
-    
-    // 注意：这里不能直接修改文件系统，需要在部署时或通过API重新生成prompts.ts
-    // 实际使用时，建议直接从KV读取提示词配置，而不是修改静态文件
-    console.log('提示词配置已更新:', prompts.map(p => p.name));
-  } catch (error) {
-    console.error('更新提示词配置失败:', error);
-    throw error;
-  }
-}
-
-// 新增：从KV加载提示词配置
-export async function loadPromptsConfig(env: Env): Promise<PromptConfig[]> {
-  try {
-    const stored = await env.ADMIN_KV.get('prompts_config');
-    if (stored) {
-      return JSON.parse(stored);
-    }
-    return getDefaultPrompts();
-  } catch (error) {
-    console.error('加载提示词配置失败，使用默认配置:', error);
-    return getDefaultPrompts();
-  }
 }
