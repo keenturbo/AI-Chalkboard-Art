@@ -127,7 +127,7 @@
             </form>
 
             <div class="mt-6 pt-6 border-t border-gray-700 text-center">
-                <p class="text-gray-500 text-xs">默认账号: admin/admin</p>
+                <p class="text-gray-500 text-xs">查看默认账号请在部署时检查配置</p>
                 <p class="text-gray-600 text-xs mt-1">首次登录后请及时修改</p>
             </div>
         </div>
@@ -214,27 +214,16 @@
                         </h3>
                         
                         <div class="mb-6">
-                            <button id="addApiBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition">
-                                + 添加新API
-                            </button>
-                        </div>
-
-                        <div id="apiList" class="space-y-4">
-                            <div class="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
-                                <div class="flex items-center justify-between mb-2">
-                                    <h4 class="font-medium text-white flex items-center">
-                                        <span class="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
-                                        Google Gemini (默认)
-                                    </h4>
-                                    <span class="text-green-400 text-sm">✓ 启用</span>
-                                </div>
-                                <p class="text-gray-400 text-sm">Google官方文生图模型，无需额外配置</p>
+                            <div class="p-4 bg-green-900/20 rounded-lg border border-green-800/50">
+                                <h4 class="text-green-400 font-medium mb-2">✋ 当前使用环境变量 API</h4>
+                                <p class="text-green-300 text-sm">系统正在直接使用 Cloudflare Pages 环境变量中配置的 API 密钥。</p>
+                                <p class="text-gray-400 text-xs mt-2">如需配置第三方 API，请在 Cloudflare Dashboard → Pages → Settings → Environment variables 中设置 GEMINI_API_KEY</p>
                             </div>
                         </div>
 
                         <div class="mt-4 p-4 bg-blue-900/20 rounded-lg border border-blue-800/50">
                             <p class="text-blue-300 text-sm">
-                                💡 可以添加Grok、元宝豆包等多个文生图模型，系统会自动调用可用的API。
+                                💡 配置多个 API 密钥可以避免单个 API 达到速率限制，系统会自动尝试可用的 API。
                             </p>
                         </div>
                     </div>
@@ -295,6 +284,15 @@
                         <!-- 登录凭证 -->
                         <div class="mb-6">
                             <h4 class="text-md font-medium text-gray-300 mb-3">登录凭证实名</h4>
+                            <div class="p-4 bg-yellow-900/20 rounded-lg border border-yellow-800/50 mb-4">
+                                <p class="text-yellow-300 text-sm mb-2">🔐 当前凭证信息</p>
+                                <p class="text-yellow-200 text-xs">
+                                    用户名：<span id="currentCredentials" class="font-mono">加载中...</span>
+                                </p>
+                                <p class="text-yellow-200 text-xs mt-1">
+                                    修改凭证后会自动保存并要求重新登录
+                                </p>
+                            </div>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <input type="text" id="newUsername" placeholder="新用户名" 
                                     class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -331,7 +329,7 @@
                                     </div>
                                     <div>
                                         <span class="text-gray-400">当前用户:</span>
-                                        <span id="currentUser" class="text-white ml-2">admin@admin</span>
+                                        <span id="currentUser" class="text-white ml-2">-</span>
                                     </div>
                                     <div>
                                         <span class="text-gray-400">配置数量:</span>
@@ -403,8 +401,8 @@
                             'Content-Type': 'application/json',
                         },
                         body: JSON.stringify({
-                            username: configManager.credentials.username,
-                            password: configManager.credentials.password,
+                            username: this.credentials.username, // 使用当前存储的凭证
+                            password: this.credentials.password, // 使用当前存储的凭证
                             config: config
                         })
                     });
@@ -469,6 +467,7 @@
         const defaultWarning = document.getElementById('defaultWarning');
         const statusMessage = document.getElementById('statusMessage');
         const currentUser = document.getElementById('currentUser');
+        const currentCredentials = document.getElementById('currentCredentials');
         const configCount = document.getElementById('configCount');
         const lastUpdate = document.getElementById('lastUpdate');
 
@@ -479,19 +478,23 @@
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value.trim();
 
-            // 显示默认账号警告
-            if (username === 'admin' && password === 'admin') {
-                defaultWarning.classList.remove('hidden');
-                loginError.classList.add('hidden');
-            }
-
             // 验证凭据
             if (configManager.credentials && 
                 username === configManager.credentials.username && 
                 password === configManager.credentials.password) {
                 
                 isAuthenticated = true;
-                currentUser.textContent = `${configManager.credentials.username}@admin`;
+                currentUser.textContent = `${configManager.credentials.username}`;
+                currentCredentials.textContent = `${configManager.credentials.username}@admin`;
+                
+                // 检查是否为默认凭证（通过检查默认配置来判断）
+                if (username === 'turbokeem' && password === 'admin') {
+                    defaultWarning.classList.remove('hidden');
+                    loginError.classList.add('hidden');
+                } else {
+                    defaultWarning.classList.add('hidden');
+                    loginError.classList.add('hidden');
+                }
                 
                 // 切换界面
                 loginContainer.classList.add('hidden');
@@ -502,8 +505,9 @@
                 
                 showStatus('登录成功！', 'success');
             } else {
-                loginError.textContent = '用户名或密码错误，请重试';
+                loginError.textContent = `用户名或密码错误\n当前:${configManager.credentials.username}/${configManager.credentials.password}`;
                 loginError.classList.remove('hidden');
+                defaultWarning.classList.add('hidden');
                 showStatus('登录失败，请检查凭据', 'error');
             }
         });
@@ -637,12 +641,26 @@
 
         // === API配置功能 ===
         document.getElementById('addApiBtn').addEventListener('click', function() {
-            showStatus('API配置功能开发中...', 'info');
+            showStatus('使用环境变量配置 API，如需修改请在 Cloudflare Dashboard 中设置', 'info');
         });
 
         function renderApiList() {
-            // API列表渲染（目前只是Google默认）
-            // 实际功能将在后端API端点支持后实现
+            // API列表渲染（目前只是环境变量配置）
+            const apiList = document.getElementById('apiList');
+            if (apiList) {
+                apiList.innerHTML = `
+                    <div class="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="font-medium text-white flex items-center">
+                                <span class="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
+                                环境变量 API (默认)
+                            </h4>
+                            <span class="text-green-400 text-sm">✓ 启用</span>
+                        </div>
+                        <p class="text-gray-400 text-sm">使用 Cloudflare Pages 环境变量配置的 API 密钥</p>
+                    </div>
+                `;
+            }
         }
 
         // === 提示词管理功能 ===
@@ -709,7 +727,7 @@
                         <span class="text-yellow-400 text-xs">自定义风格</span>
                     </div>
                     <button onclick="removePrompt(${index})" class="text-red-400 hover:text-red-300 ml-3">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-5 h-5" fill="none" stroke="fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                         </svg>
                     </button>
@@ -753,21 +771,37 @@
                 return;
             }
 
+            // 先保存新凭证到内存，然后用当前凭证更新服务器
+            const oldCredentials = { ...configManager.credentials };
             configManager.credentials = { username: newUsername, password: newPassword };
             
             const serverSaveSuccess = await configManager.saveToServer();
             configManager.saveToBrowser();
             
-            currentUser.textContent = `${newUsername}@admin`;
-            
-            // 清空表单
-            document.getElementById('newUsername').value = '';
-            document.getElementById('newPassword').value = '';
-            
             if (serverSaveSuccess) {
-                showStatus('登录凭证更新成功！下次登录请使用新凭据', 'success');
+                currentUser.textContent = newUsername;
+                currentCredentials.textContent = `${newUsername}@admin`;
+                
+                // 清空表单
+                document.getElementById('newUsername').value = '';
+                document.getElementById('newPassword').value = '';
+                
+                showStatus('登录凭证更新成功！请使用新凭证重新登录', 'success');
+                
+                // 延迟2秒后自动退出登录
+                setTimeout(() => {
+                    isAuthenticated = false;
+                    adminContainer.classList.add('hidden');
+                    loginContainer.classList.remove('hidden');
+                    loginForm.reset();
+                    loginError.classList.add('hidden');
+                    defaultWarning.classList.add('hidden');
+                    showStatus('请使用新凭据重新登录', 'info');
+                }, 2000);
             } else {
-                showStatus('凭证已更新，但服务器保存失败，请检查网络', 'warning');
+                // 如果保存失败，回滚凭证
+                configManager.credentials = oldCredentials;
+                showStatus(`凭证更新失败，请检查网络（当前仍使用 ${oldCredentials.username}/****）`, 'error');
             }
         });
 
@@ -866,8 +900,8 @@
         // === 页面加载完成后 ===
         document.addEventListener('DOMContentLoaded', function() {
             // 设置默认用户名提示
-            document.getElementById('username').placeholder = '默认: admin';
-            document.getElementById('password').placeholder = '默认: admin';
+            document.getElementById('username').placeholder = '请输入用户名';
+            document.getElementById('password').placeholder = '请输入密码';
         });
 
         // === 键盘快捷键支持 ===
