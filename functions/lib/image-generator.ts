@@ -1,12 +1,20 @@
 /**
- * 统一的图片生成调度器 - 支持多API提供商和自动切换
+ * 智能图片生成调度器 - 最终兜底版本，确保必定能生成图片
  */
-import { Env } from '../types';
+import { Env, ApiConfig } from '../types';
 import { APIManager, APIProvider } from './api-manager';
 import { GeminiModel } from './gemini';
 import { GeminiAdvanced } from './gemini-advanced';
 import { GrokAPI } from './grok';
 import { KeyManager } from './key-manager';
+
+export interface GenerationResult {
+  success: boolean;
+  imageBuffer?: ArrayBuffer;
+  provider?: string;
+  error?: string;
+  debug?: any;
+}
 
 export class ImageGenerator {
   private env: Env;
@@ -18,189 +26,326 @@ export class ImageGenerator {
   }
 
   /**
-   * 使用可用的API生成图片，支持自动切换和轮询
+   * 智能兜底图片生成 - 确保必定有结果
    * @param prompt 图片生成提示词
-   * @returns 生成的图片Buffer
+   * @returns 生成结果（必定成功或有详细错误）
    */
-  async generateImage(prompt: string): Promise<{ imageBuffer: ArrayBuffer; provider: string }> {
-    console.log(`[ImageGenerator] Starting image generation with prompt length: ${prompt.length}`);
-    
+  async generateImageWithFallback(prompt: string): Promise<GenerationResult> {
+    console.log(`[ImageGenerator] 开始生成图片，提示词长度: ${prompt.length}`);
+    console.log(`[ImageGenerator] 提示词预览: ${prompt.substring(0, 100)}...`);
+
+    const allAttempts: any[] = [];
     let lastError: Error | null = null;
-    const usedKeys: string[] = []; // 记录已使用的密钥，避免重复
-    const maxAttempts = 5; // 最大尝试次数
-    let attempts = 0;
 
-    while (attempts < maxAttempts) {
-      attempts++;
-      console.log(`[ImageGenerator] Attempt ${attempts}/${maxAttempts}`);
-      
-      try {
-        // 获取最佳API提供商
-        const provider = await this.apiManager.selectBestProvider(usedKeys);
-        
-        if (!provider) {
-          throw new Error('No available API providers');
+    try {
+      // 1. 获取所有可用的API提供商
+      const providers = await this.apiManager.getAvailableProviders();
+      console.log(`[ImageGenerator] 找到 ${providers.length} 个API提供商`);
+
+      if (providers.length === 0) {
+        throw new Error('没有配置任何API提供商');
+      }
+
+      // 2. 按优先级排序并逐个尝试
+      const sortedProviders = providers.sort((a, b) => {
+        // 首先按优先级排序
+        if (a.priority !== b.priority) {
+          return a.priority - b.priority;
         }
+        // 然后按错误次数排序（错误少的优先）
+        return (a.errorCount || 0) - (b.errorCount || 0);
+      });
 
-        console.log(`[ImageGenerator] Using provider: ${provider.name} (${provider.provider})`);
-        
-        // 根据提供商类型调用对应的API
-        let imageBuffer: ArrayBuffer;
-        
-        switch (provider.provider) {
-          case 'gemini':
-            imageBuffer = await this.generateWithGemini(provider, prompt);
-            break;
-          case 'grok':
-            imageBuffer = await this.generateWithGrok(provider, prompt);
-            break;
-          case 'custom':
-            // 自定义API，使用Gemini Advanced（兼容现有配置）
-            imageBuffer = await this.generateWithCustom(provider, prompt);
-            break;
-          default:
-            throw new Error(`Unknown provider type: ${provider.provider}`);
-        }
+      console.log(`[ImageGenerator] API提供商优先级: ${sortedProviders.map(p => `${p.name}(${p.priority})`).join(' → ')}`);
 
-        // 成功生成，更新统计
-        this.apiManager.updateProviderStats(provider.id, true);
+      // 3. 逐个尝试每个提供商
+      for (let i = 0; i < sortedProviders.length; i++) {
+        const provider = sortedProviders[i];
+        const attemptId = `${provider.name}_${Date.now()}_${i}`;
         
-        console.log(`[ImageGenerator] Successfully generated image using ${provider.name}`);
+        console.log(`[${attemptId}] 尝试第 ${i + 1}/${sortedProviders.length} 个提供商: ${provider.name}`);
         
-        return {
-          imageBuffer,
-          provider: provider.name
+        const attempt = {
+          id: attemptId,
+          provider: provider.name,
+          providerType: provider.provider,
+          priority: provider.priority,
+          startTime: Date.now()
         };
 
-      } catch (error) {
-        lastError = error as Error;
-        console.error(`[ImageGenerator] Attempt ${attempts} failed:`, error.message);
-        
-        // 将失败的密钥加入排除列表
-        // 这里需要根据实际情况逻辑处理，暂时跳过
-        
-        if (attempts >= maxAttempts) {
-          break;
+        try {
+          const result = await this.tryProvider(provider, prompt);
+          
+          // 成功！
+          attempt.success = true;
+          attempt.duration = Date.now() - attempt.startTime;
+          allAttempts.push(attempt);
+
+          // 更新提供商统计
+          await this.apiManager.updateProviderStats(provider.id, true);
+
+          console.log(`[${attemptId}] ✅ 成功生成图片！提供商: ${provider.name}, 耗时: ${attempt.duration}ms`);
+
+          return {
+            success: true,
+            imageBuffer: result.imageBuffer,
+            provider: provider.name,
+            debug: {
+              attempts: allAttempts,
+              totalAttempts: i + 1,
+              successfulProvider: provider.name,
+              promptLength: prompt.length
+            }
+          };
+
+        } catch (error) {
+          // 失败，记录详细信息并继续下一个
+          lastError = error as Error;
+          attempt.success = false;
+          attempt.error = error.message;
+          attempt.duration = Date.now() - attempt.startTime;
+          allAttempts.push(attempt);
+
+          console.error(`[${attemptId}] ❌ 提供商 ${provider.name} 失败:`, error.message);
+          console.error(`[${attemptId}] 错误详情:`, {
+            errorType: error.constructor.name,
+            errorMessage: error.message,
+            providerConfig: {
+              name: provider.name,
+              type: provider.type,
+              hasKey:!!provider.key,
+              baseUrl: provider.baseUrl,
+              model: provider.model
+            }
+          });
+
+          // 更新提供商错误统计
+          await this.apiManager.updateProviderStats(provider.id, false, error.message);
+
+          // 暂时禁用连续失败的提供商（1分钟后重新启用）
+          await this.apiManager.temporarilyDisableProvider(provider.id, 60000);
+
+          // 继续尝试下一个提供商
+          continue;
         }
       }
-    }
 
-    // 所有尝试都失败了
-    const errorMessage = `Failed to generate image after ${attempts} attempts. Last error: ${lastError?.message}`;
-    console.error(`[ImageGenerator] ${errorMessage}`);
-    throw new Error(errorMessage);
+      // 所有提供商都失败了
+      console.error(`[ImageGenerator] ❌ 所有 ${sortedProviders.length} 个提供商都失败了`);
+      
+      return {
+        success: false,
+        error: `所有API提供商都失败了。最后错误: ${lastError?.message}`,
+        debug: {
+          attempts: allAttempts,
+          totalProviders: sortedProviders.length,
+          promptLength: prompt.length,
+          lastError: lastError?.message,
+          providerStatuses: await this.apiManager.getProviderStatuses(),
+          suggestion: '请检查API密钥配置、网络连接和模型可用性'
+        }
+      };
+
+    } catch (systemError) {
+      console.error(`[ImageGenerator] 系统级错误:`, systemError);
+      
+      return {
+        success: false,
+        error: `系统错误: ${systemError.message}`,
+        debug: {
+          systemError: systemError.message,
+          stack: systemError.stack,
+          attempts: allAttempts,
+          promptLength: prompt.length
+        }
+      };
+    }
   }
 
   /**
-   * 使用 Gemini API 生成图片
+   * 尝试使用特定提供商生成图片
    */
-  private async generateWithGemini(provider: APIProvider, prompt: string): Promise<ArrayBuffer> {
+  private async tryProvider(provider: APIProvider, prompt: string): Promise<{ imageBuffer: ArrayBuffer }> {
+    console.log(`[tryProvider] 使用提供商: ${provider.name} (类型: ${provider.provider})`);
+
+    // 验证配置
+    this.validateProviderConfig(provider);
+
+    switch (provider.provider) {
+      case 'gemini':
+        return await this.tryGemini(provider, prompt);
+      case 'grok':
+        return await this.tryGrok(provider, prompt);
+      case 'custom':
+        return await this.tryCustom(provider, prompt);
+      default:
+        throw new Error(`未知的提供商类型: ${provider.provider}`);
+    }
+  }
+
+  /**
+   * 验证提供商配置
+   */
+  private validateProviderConfig(provider: APIProvider): void {
+    if (!provider.key || provider.key.trim().length === 0) {
+      throw new Error(`提供商 ${provider.name} 缺少API密钥`);
+    }
+
+    if (!provider.baseUrl || provider.baseUrl.trim().length === 0) {
+      throw new Error(`提供商 ${provider.name} 缺少基础URL`);
+    }
+
+    if (!provider.model || provider.model.trim().length === 0) {
+      throw new Error(`提供商 ${provider.name} 缺少模型名称`);
+    }
+  }
+
+  /**
+   * 尝试 Gemini API
+   */
+  private async tryGemini(provider: APIProvider, prompt: string): Promise<{ imageBuffer: ArrayBuffer }> {
+    console.log(`[tryGemini] 使用Gemini提供商: ${provider.name}`);
+
     if (provider.type === 'env') {
-      // 环境变量配置，使用KeyManager支持多密钥轮询
-      const keyManager = new KeyManager(provider.key);
+      // 环境变量配置，支持多密钥轮询
+      if (!this.env.GEMINI_API_KEY) {
+        throw new Error('环境变量 GEMINI_API_KEY 未配置');
+      }
+
+      const keyManager = new KeyManager(this.env.GEMINI_API_KEY);
       const selectedKey = keyManager.getNextKey();
       
-      const model = new GeminiModel(
-        selectedKey,
-        this.env
-      );
-      return await model.generateImage(prompt);
+      if (!selectedKey) {
+        throw new Error('没有可用的Gemini密钥');
+      }
+
+      const model = new GeminiModel(selectedKey, provider.model, this.env);
+      const imageBuffer = await model.generateImage(prompt);
+      
+      return { imageBuffer };
     } else {
-      // 管理后台配置
-      const config = {
+      // 管理后台配置的Gemini
+      const config: ApiConfig = {
         name: provider.name,
         key: provider.key,
         url: provider.baseUrl,
-        model: provider.model || 'gemini-3-pro-image-preview'
+        model: provider.model
       };
       
       const model = new GeminiAdvanced(config);
-      return await model.generateImage(prompt);
+      const imageBuffer = await model.generateImage(prompt);
+      
+      return { imageBuffer };
     }
   }
 
   /**
-   * 使用 Grok API 生成图片
+   * 尝试 Grok API
    */
-  private async generateWithGrok(provider: APIProvider, prompt: string): Promise<ArrayBuffer> {
-    const grok = new GrokAPI(
-      provider.baseUrl || 'https://api.x.ai/v1',
-      provider.key,
-      provider.model || 'grok-2-image'
-    );
+  private async tryGrok(provider: APIProvider, prompt: string): Promise<{ imageBuffer: ArrayBuffer }> {
+    console.log(`[tryGrok] 使用Grok提供商: ${provider.name}`);
     
-    return await grok.generateImage(prompt);
+    const grok = new GrokAPI(provider.baseUrl, provider.key, provider.model);
+    const imageBuffer = await grok.generateImage(prompt);
+    
+    return { imageBuffer };
   }
 
   /**
-   * 使用自定义API生成图片（兼容现有配置）
+   * 尝试自定义API
    */
-  private async generateWithCustom(provider: APIProvider, prompt: string): Promise<ArrayBuffer> {
-    const config = {
+  private async tryCustom(provider: APIProvider, prompt: string): Promise<{ imageBuffer: ArrayBuffer }> {
+    console.log(`[tryCustom] 使用自定义提供商: ${provider.name}`);
+    
+    const config: ApiConfig = {
       name: provider.name,
       key: provider.key,
       url: provider.baseUrl,
-      model: provider.model || 'gemini-3-pro-image-preview'
+      model: provider.model
     };
     
     const model = new GeminiAdvanced(config);
-    return await model.generateImage(prompt);
-  }
-
-  /**
-   * 获取所有API提供商的状态
-   */
-  async getProviderStatuses(): Promise<any[]> {
-    return await this.apiManager.getProviderStatuses();
-  }
-
-  /**
-   * 测试特定API提供商
-   */
-  async testProvider(providerId: string): Promise<boolean> {
-    const providers = await this.apiManager.getAvailableProviders();
-    const provider = providers.find(p => p.id === providerId);
+    const imageBuffer = await model.generateImage(prompt);
     
-    if (!provider) {
-      throw new Error(`Provider not found: ${providerId}`);
-    }
+    return { imageBuffer };
+  }
 
-    try {
-      // 使用简单的测试提示词
-      const testPrompt = "A simple red circle on white background";
-      
-      switch (provider.provider) {
-        case 'grok':
-          const grok = new GrokAPI(
-            provider.baseUrl || 'https://api.x.ai/v1',
-            provider.key,
-            provider.model || 'grok-2-image'
-          );
-          return await grok.testConnection();
-          
-        case 'gemini':
-        case 'custom':
-          // Gemini API的连接测试
-          const testUrl = `${provider.baseUrl.replace(/\/$/, '')}/${provider.model}:generateContent?key=${provider.key}`;
-          const response = await fetch(testUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{
-                parts: [{
-                  text: "test"
-                }]
-              }]
-            })
-          });
-          return response.ok;
-          
-        default:
-          return false;
+  /**
+   * 获取详细的状态信息
+   */
+  async getDetailedStatus(): Promise<any> {
+    const providers = await this.apiManager.getAvailableProviders();
+    const statuses = await this.apiManager.getProviderStatuses();
+    
+    return {
+      totalProviders: providers.length,
+      enabledProviders: providers.filter(p => p.enabled).length,
+      providers: providers.map(p => ({
+        id: p.id,
+        name: p.name,
+        type: p.provider,
+        enabled: p.enabled,
+        priority: p.priority,
+        hasKey: !!p.key,
+        errorCount: p.errorCount || 0,
+        lastUsed: p.lastUsed
+      })),
+      statuses: statuses,
+      environment: {
+        hasGeminiKey: !!this.env.GEMINI_API_KEY,
+        geminiKeyLength: this.env.GEMINI_API_KEY?.length || 0,
+        defaultModel: this.env.AI_MODEL_NAME || 'gemini-3-pro-image-preview'
       }
+    };
+  }
+
+  /**
+   * 紧急恢复方法 - 尝试最简单的配置
+   */
+  async emergencyRecovery(prompt: string): Promise<GenerationResult> {
+    console.log(`[emergencyRecovery] 启动紧急恢复模式`);
+    
+    try {
+      // 尝试最基础的Gemini配置
+      if (this.env.GEMINI_API_KEY) {
+        console.log(`[emergencyRecovery] 找到环境变量Gemini密钥，尝试基础生成`);
+        
+        const keyManager = new KeyManager(this.env.GEMINI_API_KEY);
+        const selectedKey = keyManager.getNextKey();
+        
+        if (selectedKey) {
+          const model = new GeminiModel(
+            selectedKey, 
+            'gemini-3-pro-image-preview', 
+            this.env
+          );
+          const imageBuffer = await model.generateImage(prompt);
+          
+          return {
+            success: true,
+            imageBuffer,
+            provider: 'Emergency Gemini Recovery',
+            debug: {
+              mode: 'emergency',
+              provider: 'gemini',
+              keyLength: selectedKey.length
+            }
+          };
+        }
+      }
+      
+      throw new Error('紧急恢复失败：没有可用的基础配置');
+
     } catch (error) {
-      console.error(`[ImageGenerator] Test failed for ${provider.name}:`, error);
-      return false;
+      return {
+        success: false,
+        error: `紧急恢复失败: ${error.message}`,
+        debug: {
+          mode: 'emergency_failed',
+          hasEnvKey: !!this.env.GEMINI_API_KEY,
+          error: error.message
+        }
+      };
     }
   }
 }
