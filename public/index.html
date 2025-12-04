@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>黑板画 AI 生成器</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #FF6B6B;
+            --secondary-color: #F4A261;
+            --accent-color: #2A9D8F;
+            --success-color: #4CAF50;
+            --warning-color: #FF9800;
+            --error-color: #F44336;
+            --bg-dark: #2C3E50;
+            --bg-medium: #34495E;
+            --bg-light: #ECF0F1;
+            --text-light: #FFFFFF;
+            --text-dark: #2C3E50;
+            --chalk-black: #1a1a1a;
+            --chalk-white: #f8f8f8;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #F5F7FA 0%, #C3CFE2 100%);
+            min-height: 100vh;
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: var(--bg-dark);
+            color: var(--text-light);
+            padding: 20px 0;
+            text-align: center;
+            margin-bottom: 30px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .input-section, .result-section {
+            background: white;
+            padding: 30px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--bg-dark);
+        }
+
+        input[type="text"], select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #E0E0E0;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        input[type="text"]:focus, select:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 10px rgba(42, 157, 143, 0.2);
+        }
+
+        .style-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .style-option {
+            padding: 10px;
+            border: 2px solid #E0E0E0;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            text-align: center;
+            transition: var(--transition);
+            font-size: 0.9rem;
+        }
+
+        .style-option:hover {
+            border-color: var(--accent-color);
+            background-color: rgba(42, 157, 143, 0.1);
+        }
+
+        .style-option.selected {
+            border-color: var(--primary-color);
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .generate-btn {
+            width: 100%;
+            padding: 15px 20px;
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .generate-btn:hover {
+            background: linear-gradient(45deg, var(--secondary-color), var(--primary-color));
+            transform: translateY(-2px);
+            box-shadow: var(--box-shadow);
+        }
+
+        .generate-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            color: var(--bg-dark);
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result-image {
+            width: 100%;
+            max-height: 500px;
+            object-fit: contain;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            margin-bottom: 20px;
+        }
+
+        .api-info {
+            background: var(--bg-light);
+            padding: 15px;
+            border-radius: var(--border-radius);
+            border-left: 4px solid var(--accent-color);
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+
+        .admin-link {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--bg-dark);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            transition: var(--transition);
+            box-shadow: var(--box-shadow);
+            font-size: 0.9rem;
+        }
+
+        .admin-link:hover {
+            background: var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        .error-message {
+            background: var(--error-color);
+            color: white;
+            padding: 15px;
+            border-radius: var(--border-radius);
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .error-message.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            header h1 {
+                font-size: 2rem;
+            }
+
+            .admin-link {
+                bottom: 10px;
+                right: 10px;
+                font-size: 0.8rem;
+                padding: 10px 15px;
+            }
+        }
+
+        .debug-info {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 0.8rem;
+            font-family: monospace;
+            display: none;
+        }
+
+        .debug-info.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>
+            <i class="fas fa-chalkboard"></i>
+            黑板画 AI 生成器
+        </h1>
+        <p>输入内容，选择风格，一键生成精美黑板画</p>
+    </header>
+
+    <div class="container">
+        <main class="main-content">
+            <section class="input-section">
+                <h2 class="section-title">
+                    <i class="fas fa-sliders-h"></i>
+                    配置选项
+                </h2>
+
+                <div class="form-group">
+                    <label for="character">请输入角色/物品名称：</label>
+                    <input type="text" id="character" placeholder="例如：Hello Kitty、皮卡丘、小猫咪" value="小猫咪">
+                </div>
+
+                <div class="form-group">
+                    <label>请选择图片风格：</label>
+                    <select id="style">
+                        <option value="blackboard">教室黑板粉笔画</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>推荐风格（点击选择）：</label>
+                    <div class="style-options">
+                        <div class="style-option selected" data-style="blackboard">
+                            <i class="fas fa-chalkboard"></i><br>黑板画
+                        </div>
+                    </div>
+                </div>
+
+                <button class="generate-btn" id="generate">
+                    <i class="fas fa-magic"></i>
+                    开始生成
+                </button>
+            </section>
+
+            <section class="result-section">
+                <h2 class="section-title">
+                    <i class="fas fa-image"></i>
+                    生成结果
+                </h2>
+
+                <div class="error-message" id="error"></div>
+
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>AI 正在生成您的黑板画，请稍候...</p>
+                </div>
+
+                <div id="result" style="display: none;">
+                    <img class="result-image" id="result-image" alt="生成的黑板画">
+
+                    <div class="api-info" id="api-info">
+                        <i class="fas fa-info-circle"></i>
+                        <span id="api-details"></span>
+                    </div>
+
+                    <div class="debug-info" id="debug-info"></div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <a href="/admin.html" class="admin-link">
+        <i class="fas fa-cog"></i>
+        管理后台
+    </a>
+
+    <script>
+        let currentRequest = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const styleSelect = document.getElementById('style');
+            const styleOptions = document.querySelectorAll('.style-option');
+            const generateBtn = document.getElementById('generate');
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            const error = document.getElementById('error');
+            const characterInput = document.getElementById('character');
+
+            // 处理风格选项点击
+            styleOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    styleOptions.forEach(opt => opt.classList.remove('selected'));
+                    this.classList.add('selected');
+                    const style = this.dataset.style;
+                    styleSelect.value = style;
+                });
+            });
+
+            // 处理下拉菜单变化
+            styleSelect.addEventListener('change', function() {
+                styleOptions.forEach(opt => opt.classList.remove('selected'));
+                const selectedOption = document.querySelector(`[data-style="${this.value}"]`);
+                if (selectedOption) {
+                    selectedOption.classList.add('selected');
+                }
+            });
+
+            // 生成按钮点击事件
+            generateBtn.addEventListener('click', generate);
+
+            // 支持回车键生成
+            characterInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    generate();
+                }
+            });
+
+            // 自动生成（可选）
+            // generate();
+        });
+
+        async function generate() {
+            const character = document.getElementById('character').value.trim();
+            const style = document.getElementById('style').value;
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            const error = document.getElementById('error');
+            const generateBtn = document.getElementById('generate');
+            const apiDetails = document.getElementById('api-details');
+            const debugInfo = document.getElementById('debug-info');
+
+            if (!character) {
+                showError('请输入角色或物品名称');
+                return;
+            }
+
+            // 重置状态
+            loading.classList.add('active');
+            result.style.display = 'none';
+            error.classList.remove('active');
+            generateBtn.disabled = true;
+            debugInfo.classList.remove('active');
+
+            try {
+                // 取消之前的请求
+                if (currentRequest) {
+                    currentRequest.abort();
+                }
+
+                // 发送请求到新的多API兜底端点
+                const response = await fetch('/api/generate-new', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        character_name: character,
+                        style: style
+                    })
+                });
+
+                const data = await response.json();
+                
+                console.log('新API响应:', data);
+
+                if (data.success && data.image_url) {
+                    // 成功生成图片
+                    displayResult(data.image_url, data);
+                } else if (data.image_url) {
+                    // 旧格式兼容
+                    displayResult(data.image_url, data);
+                } else {
+                    // 显示详细错误信息
+                    const errorMsg = data.error || '生成失败';
+                    const debugMsg = data.details || data.debug || '';
+                    showError(errorMsg, debugMsg);
+                    
+                    // 显示调试信息（如果有）
+                    if (data.debug) {
+                        debugInfo.innerHTML = `
+                            <strong>调试信息:</strong><br>
+                            ${JSON.stringify(data.debug, null, 2)}
+                        `;
+                        debugInfo.classList.add('active');
+                    }
+                }
+
+            } catch (err) {
+                console.error('请求错误:', err);
+                let errorMsg = '网络请求失败';
+                
+                if (err.name === 'AbortError') {
+                    errorMsg = '请求已取消';
+                } else if (err.message) {
+                    errorMsg = `网络错误: ${err.message}`;
+                }
+                
+                showError(errorMsg);
+            } finally {
+                loading.classList.remove('active');
+                generateBtn.disabled = false;
+            }
+        }
+
+        function displayResult(imageUrl, data) {
+            const result = document.getElementById('result');
+            const error = document.getElementById('error');
+            const resultImage = document.getElementById('result-image');
+            const apiDetails = document.getElementById('api-details');
+            const debugInfo = document.getElementById('debug-info');
+
+            // 显示图片
+            resultImage.src = imageUrl;
+            result.style.display = 'block';
+            error.classList.remove('active');
+
+            // 显示API信息
+            const apiInfo = [];
+            if (data.api_used) {
+                apiInfo.push(`🤖 API: ${data.api_used}`);
+            }
+            if (data.style) {
+                apiInfo.push(`🎨 风格: ${data.style}`);
+            }
+            if (data.processing_time) {
+                apiInfo.push(`⏱️ 耗时: ${Math.round(data.processing_time / 1000)}s`);
+            }
+            if (data.prompt_used) {
+                apiInfo.push(`📝 提示词长度: ${data.prompt_used.length} 字符`);
+            }
+
+            apiDetails.innerHTML = apiInfo.join(' | ');
+
+            // 显示调试信息（如果有）
+            if (data.debug) {
+                debugInfo.innerHTML = `
+                    <strong>调试信息:</strong><br>
+                    ${JSON.stringify(data.debug, null, 2)}
+                `;
+                debugInfo.classList.add('active');
+            }
+
+            result.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function showError(message, details = '') {
+            const error = document.getElementById('error');
+            const result = document.getElementById('result');
+            
+            let errorHtml = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
+            if (details) {
+                errorHtml += `<details><summary>详细信息</summary><pre>${details}</pre></details>`;
+            }
+            
+            error.innerHTML = errorHtml;
+            error.classList.add('active');
+            result.style.display = 'none';
+            error.scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
