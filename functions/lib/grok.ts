@@ -1,12 +1,13 @@
 /**
- * Grok API 调用器 - 支持 X.AI Grok 文生图 API
+ * Grok API 调用器 - 支持 OpenAI 兼容的 Chat Completions API
+ * 通过对话模式生成图片
  */
 export class GrokAPI {
   private baseUrl: string;
   private apiKey: string;
   private model: string;
 
-  constructor(baseUrl: string, apiKey: string, model: string = 'grok-2-image') {
+  constructor(baseUrl: string, apiKey: string, model: string = 'grok-4.1-fast') {
     this.baseUrl = baseUrl.replace(/\/$/, ''); // 移除末尾的斜杠
     this.apiKey = apiKey.trim();
     this.model = model;
@@ -15,7 +16,7 @@ export class GrokAPI {
   }
 
   /**
-   * 使用 Grok API 生成图片
+   * 使用 Grok Chat Completions API 生成图片
    * @param prompt 图片生成提示词
    * @returns 图片数据 (ArrayBuffer)
    */
@@ -23,8 +24,11 @@ export class GrokAPI {
     try {
       console.log(`[GrokAPI] Generating image with prompt length: ${prompt.length}`);
       
-      // Grok API 调用 - 根据官方文档格式
-      const response = await fetch(`${this.baseUrl}/images/generations`, {
+      // 构造图片生成提示 - 让模型生成图片
+      const imagePrompt = `Please generate an image: ${prompt}. Return the image directly without additional text.`;
+      
+      // 使用 OpenAI 兼容的 Chat Completions API
+      const response = await fetch(`${this.baseUrl}/chat/completions`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${this.apiKey}`,
@@ -33,11 +37,15 @@ export class GrokAPI {
         },
         body: JSON.stringify({
           model: this.model,
-          prompt: prompt,
-          n: 1, // 生成1张图片
-          size: '1024x1024', // 图片尺寸
-          quality: 'standard', // 图片质量
-          response_format: 'b64_json' // 返回base64格式
+          messages: [
+            {
+              role: 'user',
+              content: imagePrompt
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 1000,
+          stream: false
         })
       });
 
@@ -56,37 +64,73 @@ export class GrokAPI {
       }
 
       const data = await response.json();
-      console.log(`[GrokAPI] API response received, created: ${data.created}`);
+      console.log(`[GrokAPI] API response received:`, JSON.stringify(data, null, 2));
       
-      // 解析返回的base64图片数据
-      if (data.data && data.data.length > 0) {
-        const imageData = data.data[0];
+      // 解析Chat Completions响应
+      if (data.choices && data.choices.length > 0) {
+        const choice = data.choices[0];
+        const content = choice.message?.content;
         
-        if (imageData.b64_json) {
-          // 将base64转换为ArrayBuffer
-          const base64Data = imageData.b64_json;
-          const binaryString = atob(base64Data);
-          const bytes = new Uint8Array(binaryString.length);
-          
-          for (let i = 0; i < binaryString.length; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
+        if (content) {
+          // 检查内容中是否包含图片URL
+          const imageUrls = this.extractImageUrls(content);
+          if (imageUrls.length > 0) {
+            console.log(`[GrokAPI] Found image URLs: ${imageUrls.length}`);
+            // 下载第一张图片
+            return await this.downloadImageFromUrl(imageUrls[0]);
           }
           
-          console.log(`[GrokAPI] Successfully generated image (${bytes.length} bytes)`);
-          return bytes.buffer;
-        } else if (imageData.url) {
-          // 如果返回的是URL，下载图片
-          return await this.downloadImageFromUrl(imageData.url);
-        } else {
-          throw new Error('No image data in Grok API response');
+          // 检查是否包含base64图片数据
+          const base64Images = this.extractBase64Images(content);
+          if (base64Images.length > 0) {
+            console.log(`[GrokAPI] Found base64 images: ${base64Images.length}`);
+            return this.base64ToArrayBuffer(base64Images[0]);
+          }
+          
+          // 如果没有找到图片，可能是模型返回了文字描述
+          console.warn(`[GrokAPI] No images found in response, content: `, content);
+          throw new Error('Model response did not contain image data');
         }
-      } else {
-        throw new Error('Empty response from Grok API');
       }
+      
+      throw new Error('Invalid response format from Grok API');
     } catch (error) {
       console.error('[GrokAPI] Error generating image:', error);
       throw error;
     }
+  }
+
+  /**
+   * 从文本中提取图片URL
+   */
+  private extractImageUrls(text: string): string[] {
+    const urlRegex = /https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|webp)/gi;
+    const matches = text.match(urlRegex);
+    return matches || [];
+  }
+
+  /**
+   * 从文本中提取base64图片数据
+   */
+  private extractBase64Images(text: string): string[] {
+    const matches = text.match(/data:image\/[a-z]+;base64,[A-Za-z0-9+/=]+/gi);
+    return matches || [];
+  }
+
+  /**
+   * 将base64转换为ArrayBuffer
+   */
+  private base64ToArrayBuffer(base64Data: string): ArrayBuffer {
+    // 移除data:image/...;base64,前缀
+    const base64 = base64Data.split(',')[1];
+    const binaryString = atob(base64);
+    const bytes = new Uint8Array(binaryString.length);
+    
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    
+    return bytes.buffer;
   }
 
   /**
@@ -108,9 +152,9 @@ export class GrokAPI {
    */
   async testConnection(): Promise<boolean> {
     try {
-      console.log(`[GrokAPI] Testing connection...`);
+      console.log(`[GrokAPI] Testing connection to ${this.baseUrl}/models`);
       
-      // 使用一个简单的测试请求
+      // 使用标准的OpenAI兼容API测试端点
       const response = await fetch(`${this.baseUrl}/models`, {
         method: 'GET',
         headers: {
@@ -121,10 +165,11 @@ export class GrokAPI {
 
       if (response.ok) {
         const data = await response.json();
-        console.log(`[GrokAPI] Connection test successful, available models:`, data.data?.length || 0);
+        console.log(`[GrokAPI] Connection test successful, response:`, JSON.stringify(data, null, 2));
         return true;
       } else {
-        console.error(`[GrokAPI] Connection test failed: ${response.status}`);
+        const errorText = await response.text();
+        console.error(`[GrokAPI] Connection test failed: ${response.status}`, errorText);
         return false;
       }
     } catch (error) {
