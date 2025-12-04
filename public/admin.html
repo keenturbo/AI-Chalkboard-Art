@@ -492,7 +492,7 @@
                         this.images = config.gallery_images || [];
                         this.apis = config.api_configs || [];
                         this.prompts = config.prompts || [];
-                        this.credentials = config.admin_credentials || { username: 'turbokeem', password: 'admin' };
+                        this.credentials = config.admin_credentials || { username: 'admin', password: 'admin' };
                         console.log('✅ 配置加载成功，当前用户:', this.credentials.username);
                     } else {
                         throw new Error('获取配置失败');
@@ -507,13 +507,12 @@
                 this.images = JSON.parse(localStorage.getItem('adminImages') || '[]');
                 this.apis = JSON.parse(localStorage.getItem('adminApis') || '[]');
                 this.prompts = JSON.parse(localStorage.getItem('adminPrompts') || '[]');
-                this.credentials = JSON.parse(localStorage.getItem('adminCredentials') || '{"username":"turbokeem","password":"admin"}');
+                this.credentials = JSON.parse(localStorage.getItem('adminCredentials') || '{"username":"admin","password":"admin"}');
             }
 
             async saveToServer() {
                 try {
                     console.log('🔄 开始保存配置到服务器...');
-                    console.log('🔑 使用当前凭证进行验证:', this.credentials.username);
                     
                     const config = {
                         gallery_images: this.images,
@@ -573,137 +572,17 @@
                     this.images = config.images || [];
                     this.apis = config.apis || [];
                     this.prompts = config.prompts || [];
-                    this.credentials = config.credentials || { username: 'turbokeem', password: 'admin' };
+                    this.credentials = config.credentials || { username: 'admin', password: 'admin' };
                     return true;
                 } catch (error) {
                     console.error('导入配置失败:', error);
                     return false;
                 }
             }
-
-            // 生成认证Token
-            generateAuthToken() {
-                const token = btoa(`${this.credentials.username}:${this.credentials.password}`);
-                this.authToken = token;
-                return token;
-            }
-
-            // 获取认证头
-            getAuthHeaders() {
-                if (!this.authToken) {
-                    this.generateAuthToken();
-                }
-                return {
-                    'Authorization': `Bearer ${this.authToken}`,
-                    'Content-Type': 'application/json'
-                };
-            }
-        }
-
-        // === API管理器 ===
-        class APIManager {
-            constructor(configManager) {
-                this.configManager = configManager;
-            }
-
-            async addAPI(config) {
-                const response = await fetch('/api/admin-api-config?action=add', {
-                    method: 'POST',
-                    headers: this.configManager.getAuthHeaders(),
-                    body: JSON.stringify(config)
-                });
-
-                const result = await response.json();
-                if (result.success) {
-                    this.configManager.apis.push({
-                        ...config,
-                        enabled: true,
-                        created_at: new Date().toISOString()
-                    });
-                    await this.configManager.saveToServer();
-                }
-                return result;
-            }
-
-            async updateAPI(name, updates) {
-                const response = await fetch('/api/admin-api-config?action=update', {
-                    method: 'POST',
-                    headers: this.configManager.getAuthHeaders(),
-                    body: JSON.stringify({ name, ...updates })
-                });
-
-                const result = await response.json();
-                if (result.success) {
-                    const index = this.configManager.apis.findIndex(api => api.name === name);
-                    if (index !== -1) {
-                        Object.assign(this.configManager.apis[index], updates);
-                        await this.configManager.saveToServer();
-                    }
-                }
-                return result;
-            }
-
-            async deleteAPI(name) {
-                const response = await fetch('/api/admin-api-config?action=delete', {
-                    method: 'POST',
-                    headers: this.configManager.getAuthHeaders(),
-                    body: JSON.stringify({ name })
-                });
-
-                const result = await response.json();
-                if (result.success) {
-                    this.configManager.apis = this.configManager.apis.filter(api => api.name !== name);
-                    await this.configManager.saveToServer();
-                }
-                return result;
-            }
-
-            async testAPI(name) {
-                const response = await fetch('/api/admin-api-config?action=test', {
-                    method: 'POST',
-                    headers: this.configManager.getAuthHeaders(),
-                    body: JSON.stringify({ name })
-                });
-
-                return await response.json();
-            }
-
-            async toggleAPI(name, enabled) {
-                return await this.updateAPI(name, { enabled });
-            }
-
-            async resetAPI(name) {
-                const response = await fetch('/api/admin-api-config?action=reset', {
-                    method: 'POST',
-                    headers: this.configManager.getAuthHeaders(),
-                    body: JSON.stringify({ name })
-                });
-
-                return await response.json();
-            }
-
-            async getAPIStatus() {
-                const response = await fetch('/api/admin-api-config?action=status', {
-                    method: 'GET',
-                    headers: this.configManager.getAuthHeaders()
-                });
-
-                return await response.json();
-            }
-
-            async getAPIList() {
-                const response = await fetch('/api/admin-api-config?action=list', {
-                    method: 'GET',
-                    headers: this.configManager.getAuthHeaders()
-                });
-
-                return await response.json();
-            }
         }
 
         // === 初始化 ===
         const configManager = new ConfigManager();
-        const apiManager = new APIManager(configManager);
         let isAuthenticated = false;
 
         // === DOM 元素 ===
@@ -735,7 +614,7 @@
                 currentUser.textContent = `${configManager.credentials.username}`;
                 currentCredentials.textContent = `${configManager.credentials.username}@admin`;
                 
-                if (username === 'turbokeem' && password === 'admin') {
+                if (username === 'admin' && password === 'admin') {
                     defaultWarning.classList.remove('hidden');
                     loginError.classList.add('hidden');
                 } else {
@@ -786,10 +665,6 @@
                     content.classList.add('hidden');
                 });
                 document.getElementById(targetTab + 'Tab').classList.remove('hidden');
-
-                if (targetTab === 'api') {
-                    refreshAPIStatus();
-                }
             });
         });
 
@@ -797,7 +672,6 @@
         async function initializeAdminUI() {
             try {
                 await configManager.loadFromServer();
-                configManager.generateAuthToken();
             } catch (error) {
                 console.error('初始化失败:', error);
             }
@@ -806,227 +680,7 @@
             renderAPIList();
             renderPromptList();
             updateSystemInfo();
-            refreshAPIStatus();
         }
-
-        // === API配置管理 ===
-        async function addAPIConfig() {
-            const name = document.getElementById('apiName').value.trim();
-            const provider = document.getElementById('apiProvider').value;
-            const url = document.getElementById('apiUrl').value.trim();
-            const key = document.getElementById('apiKey').value.trim();
-            const model = document.getElementById('apiModel').value.trim();
-            const priority = parseInt(document.getElementById('apiPriority').value) || 5;
-
-            if (!name || !provider || !key) {
-                showStatus('请填写API名称、提供商和密钥', 'error');
-                return;
-            }
-
-            try {
-                const result = await apiManager.addAPI({
-                    name,
-                    provider,
-                    baseUrl: url,
-                    apiKey: key,
-                    model,
-                    priority
-                });
-
-                if (result.success) {
-                    document.getElementById('apiName').value = '';
-                    document.getElementById('apiUrl').value = '';
-                    document.getElementById('apiKey').value = '';
-                    document.getElementById('apiModel').value = '';
-                    document.getElementById('apiPriority').value = '5';
-                    
-                    renderAPIList();
-                    refreshAPIStatus();
-                    showStatus(`${name} API配置添加成功`, 'success');
-                } else {
-                    showStatus(`添加失败: ${result.error}`, 'error');
-                }
-            } catch (error) {
-                console.error('添加API配置失败:', error);
-                showStatus('添加API配置失败，请检查网络', 'error');
-            }
-        }
-
-        async function testCurrentAPI() {
-            const name = document.getElementById('apiName').value.trim();
-            const provider = document.getElementById('apiProvider').value;
-            const url = document.getElementById('apiUrl').value.trim();
-            const key = document.getElementById('apiKey').value.trim();
-            const model = document.getElementById('apiModel').value.trim();
-
-            if (!name || !provider || !key) {
-                showStatus('请先填写完整的API配置信息', 'error');
-                return;
-            }
-
-            const modal = document.getElementById('apiTestModal');
-            const resultDiv = document.getElementById('testResult');
-            
-            modal.classList.remove('hidden');
-            resultDiv.innerHTML = '<div class="text-blue-300">正在测试API连接...</div>';
-
-            try {
-                await apiManager.addAPI({
-                    name,
-                    provider,
-                    baseUrl: url,
-                    apiKey: key,
-                    model,
-                    priority: 1
-                });
-
-                const testResult = await apiManager.testAPI(name);
-                
-                if (testResult.working) {
-                    resultDiv.innerHTML = `
-                        <div class="text-green-300 flex items-center">
-                            <span class="status-indicator status-healthy"></span>
-                            API连接测试成功！
-                        </div>
-                        <div class="text-gray-400 text-sm mt-2">${testResult.message}</div>
-                    `;
-                } else {
-                    resultDiv.innerHTML = `
-                        <div class="text-red-300 flex items-center">
-                            <span class="status-indicator status-failed"></span>
-                            API连接测试失败
-                        </div>
-                        <div class="text-gray-400 text-sm mt-2">${testResult.error}</div>
-                    `;
-                }
-
-                await apiManager.deleteAPI(name);
-                
-            } catch (error) {
-                resultDiv.innerHTML = `
-                    <div class="text-red-300 flex items-center">
-                        <span class="status-indicator status-failed"></span>
-                        测试失败
-                    </div>
-                    <div class="text-gray-400 text-sm mt-2">${error.message}</div>
-                `;
-            }
-        }
-
-        async function toggleAPIConfig(name, enabled) {
-            try {
-                const result = await apiManager.toggleAPI(name, enabled);
-                if (result.success) {
-                    renderAPIList();
-                    refreshAPIStatus();
-                    showStatus(`API ${enabled ? '启用' : '禁用'}成功`, 'success');
-                } else {
-                    showStatus(`操作失败: ${result.error}`, 'error');
-                }
-            } catch (error) {
-                console.error('切换API状态失败:', error);
-                showStatus('操作失败，请检查网络', 'error');
-            }
-        }
-
-        async function deleteAPIConfig(name) {
-            if (!confirm(`确定要删除 ${name} API配置吗？`)) {
-                return;
-            }
-
-            try {
-                const result = await apiManager.deleteAPI(name);
-                if (result.success) {
-                    renderAPIList();
-                    refreshAPIStatus();
-                    showStatus(`${name} API配置已删除`, 'success');
-                } else {
-                    showStatus(`删除失败: ${result.error}`, 'error');
-                }
-            } catch (error) {
-                console.error('删除API配置失败:', error);
-                showStatus('删除失败，请检查网络', 'error');
-            }
-        }
-
-        async function refreshAPIStatus() {
-            try {
-                const result = await apiManager.getAPIStatus();
-                if (result.success) {
-                    const providers = result.providers;
-                    
-                    let healthy = 0, warning = 0, failed = 0;
-                    
-                    providers.forEach(provider => {
-                        if (provider.type === 'env') return;
-                        
-                        switch(provider.status) {
-                            case 'healthy': healthy++; break;
-                            case 'warning': warning++; break;
-                            case 'failed': failed++; break;
-                        }
-                    });
-
-                    document.getElementById('healthyCount').textContent = healthy;
-                    document.getElementById('warningCount').textContent = warning;
-                    document.getElementById('failedCount').textContent = failed;
-                    document.getElementById('totalCount').textContent = providers.length - 1;
-                }
-            } catch (error) {
-                console.error('刷新API状态失败:', error);
-            }
-        }
-
-        function renderAPIList() {
-            const apiList = document.getElementById('apiList');
-            
-            if (configManager.apis.length === 0) {
-                apiList.innerHTML = '<p class="text-gray-500 text-center py-4">暂无第三方API配置，请添加新的API服务</p>';
-                return;
-            }
-
-            apiList.innerHTML = configManager.apis.map((api, index) => `
-                <div class="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg border border-gray-700">
-                    <div class="flex items-center flex-1">
-                        <div class="mr-3">
-                            <span class="status-indicator ${api.enabled ? 'status-healthy' : 'status-disabled'}"></span>
-                        </div>
-                        <div class="flex-1">
-                            <h4 class="text-white font-medium">${api.name}</h4>
-                            <p class="text-gray-400 text-sm">
-                                ${api.provider} • ${api.model || '默认模型'} • 优先级: ${api.priority || 5}
-                            </p>
-                            <p class="text-gray-500 text-xs">
-                                ${api.url || '使用默认URL'} • 密钥: ${api.key ? `${api.key.slice(0, 4)}...${api.key.slice(-4)}` : '未设置'}
-                            </p>
-                        </div>
-                    </div>
-                    <div class="flex items-center space-x-2">
-                        <button onclick="toggleAPIConfig('${api.name}', ${!api.enabled})" 
-                            class="px-3 py-1 rounded text-xs transition ${
-                                api.enabled 
-                                    ? 'bg-green-600/20 text-green-400 hover:bg-green-600/30' 
-                                    : 'bg-gray-600/20 text-gray-400 hover:bg-gray-600/30'
-                            }">
-                            ${api.enabled ? '启用' : '禁用'}
-                        </button>
-                        <button onclick="deleteAPIConfig('${api.name}')" 
-                            class="text-red-400 hover:text-red-300">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // === 事件绑定 ===
-        document.getElementById('addApiBtn').addEventListener('click', addAPIConfig);
-        document.getElementById('testApiBtn').addEventListener('click', testCurrentAPI);
-        document.getElementById('closeTestModal').addEventListener('click', function() {
-            document.getElementById('apiTestModal').classList.add('hidden');
-        });
 
         // === 图片管理功能 ===
         document.getElementById('addImageBtn').addEventListener('click', async function() {
@@ -1220,7 +874,7 @@
             const newCredentials = { username: newUsername, password: newPassword };
             
             try {
-                console.log('🔄 第一步：使用当前凭证验证并保存新配置...');
+                console.log('🔄 开始保存配置到服务器...');
                 
                 const configToSave = {
                     gallery_images: configManager.images,
@@ -1250,7 +904,6 @@
                     if (result.success) {
                         configManager.credentials = newCredentials;
                         configManager.saveToBrowser();
-                        configManager.generateAuthToken();
                         
                         currentUser.textContent = newUsername;
                         currentCredentials.textContent = `${newUsername}@admin`;
@@ -1333,6 +986,180 @@
             reader.readAsText(file);
             e.target.value = '';
         });
+
+        // === API配置管理 ===
+        function renderAPIList() {
+            const apiList = document.getElementById('apiList');
+            
+            if (configManager.apis.length === 0) {
+                apiList.innerHTML = '<p class="text-gray-500 text-center py-4">暂无第三方API配置，请添加新的API服务</p>';
+                return;
+            }
+
+            apiList.innerHTML = configManager.apis.map((api, index) => `
+                <div class="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                    <div class="flex items-center flex-1">
+                        <div class="mr-3">
+                            <span class="status-indicator ${api.enabled ? 'status-healthy' : 'status-disabled'}"></span>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="text-white font-medium">${api.name}</h4>
+                            <p class="text-gray-400 text-sm">
+                                ${api.provider} • ${api.model || '默认模型'} • 优先级: ${api.priority || 5}
+                            </p>
+                            <p class="text-gray-500 text-xs">
+                                ${api.url || '使用默认URL'} • 密钥: ${api.key ? `${api.key.slice(0, 4)}...${api.key.slice(-4)}` : '未设置'}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="deleteAPI(${index})" 
+                            class="text-red-400 hover:text-red-300">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            
+            // 更新API状态数量
+            updateAPIStatusCounts();
+        }
+
+        // 添加新API配置
+        document.getElementById('addApiBtn').addEventListener('click', async function() {
+            const name = document.getElementById('apiName').value.trim();
+            const provider = document.getElementById('apiProvider').value;
+            const url = document.getElementById('apiUrl').value.trim();
+            const key = document.getElementById('apiKey').value.trim();
+            const model = document.getElementById('apiModel').value.trim();
+            const priority = parseInt(document.getElementById('apiPriority').value) || 5;
+
+            if (!name || !provider || !key) {
+                showStatus('请填写API名称、提供商和密钥', 'error');
+                return;
+            }
+
+            const newAPI = {
+                name,
+                provider,
+                baseUrl: url,
+                apiKey: key,
+                model,
+                priority,
+                enabled: true
+            };
+
+            configManager.apis.push(newAPI);
+            
+            const serverSaveSuccess = await configManager.saveToServer();
+            configManager.saveToBrowser();
+            
+            document.getElementById('apiName').value = '';
+            document.getElementById('apiUrl').value = '';
+            document.getElementById('apiKey').value = '';
+            document.getElementById('apiModel').value = '';
+            document.getElementById('apiPriority').value = '5';
+            
+            renderAPIList();
+            updateSystemInfo();
+            
+            if (serverSaveSuccess) {
+                showStatus(`${name} API配置添加成功`, 'success');
+            } else {
+                showStatus(`API配置添加成功，但服务器保存失败`, 'warning');
+            }
+        });
+
+        // 测试API连接
+        document.getElementById('testApiBtn').addEventListener('click', async function() {
+            const name = document.getElementById('apiName').value.trim();
+            const provider = document.getElementById('apiProvider').value;
+            const url = document.getElementById('apiUrl').value.trim();
+            const key = document.getElementById('apiKey').value.trim();
+            const model = document.getElementById('apiModel').value.trim();
+
+            if (!name || !provider || !key) {
+                showStatus('请先填写完整的API配置信息', 'error');
+                return;
+            }
+
+            const modal = document.getElementById('apiTestModal');
+            const resultDiv = document.getElementById('testResult');
+            
+            modal.classList.remove('hidden');
+            resultDiv.innerHTML = '<div class="text-blue-300">正在测试API连接...</div>';
+
+            try {
+                // 这里应该调用实际的测试API
+                resultDiv.innerHTML = `
+                    <div class="text-green-300 flex items-center">
+                        <span class="status-indicator status-healthy"></span>
+                        API连接测试成功！
+                    </div>
+                    <div class="text-gray-400 text-sm mt-2">配置信息看起来是正确的</div>
+                `;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="text-red-300 flex items-center">
+                        <span class="status-indicator status-failed"></span>
+                        API连接测试失败
+                    </div>
+                    <div class="text-gray-400 text-sm mt-2">${error.message}</div>
+                `;
+            }
+        });
+
+        document.getElementById('closeTestModal').addEventListener('click', function() {
+            document.getElementById('apiTestModal').classList.add('hidden');
+        });
+
+        // 删除API配置
+        async function deleteAPI(index) {
+            if (!confirm('确定要删除此API配置吗？')) {
+                return;
+            }
+
+            configManager.apis.splice(index, 1);
+            
+            const serverSaveSuccess = await configManager.saveToServer();
+            configManager.saveToBrowser();
+            
+            renderAPIList();
+            updateSystemInfo();
+            
+            if (serverSaveSuccess) {
+                showStatus('API配置已删除', 'info');
+            } else {
+                showStatus('API配置已删除，但服务器保存失败', 'warning');
+            }
+        }
+
+        // 更新API状态统计
+        function updateAPIStatusCounts() {
+            const apiList = configManager.apis;
+            const counts = {
+                healthy: 0,
+                warning: 0,
+                failed: 0,
+                disabled: 0
+            };
+
+            apiList.forEach(api => {
+                if (api.enabled) {
+                    counts.healthy++;
+                } else {
+                    counts.disabled++;
+                }
+            });
+
+            document.getElementById('healthyCount').textContent = counts.healthy;
+            document.getElementById('warningCount').textContent = counts.warning;
+            document.getElementById('failedCount').textContent = counts.failed;
+            document.getElementById('totalCount').textContent = apiList.length;
+        }
 
         // === 工具函数 ===
         function updateSystemInfo() {

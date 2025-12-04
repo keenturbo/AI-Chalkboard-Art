@@ -3,549 +3,816 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>黑板画 AI 生成器</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <title>AI 粉笔画生成器</title>
+    <!-- 引入 Tailwind CSS (无需构建，CDN直接引入) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        chalk: {
+                            50: '#f9fafb',
+                            100: '#f3f4f6',
+                            900: '#111827',
+                        },
+                        board: '#1a1a1a', // 近似黑板深色背景
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        :root {
-            --primary-color: #FF6B6B;
-            --secondary-color: #F4A261;
-            --accent-color: #2A9D8F;
-            --success-color: #4CAF50;
-            --warning-color: #FF9800;
-            --error-color: #F44336;
-            --bg-dark: #2C3E50;
-            --bg-medium: #34495E;
-            --bg-light: #ECF0F1;
-            --text-light: #FFFFFF;
-            --text-dark: #2C3E50;
-            --chalk-black: #1a1a1a;
-            --chalk-white: #f8f8f8;
-            --border-radius: 8px;
-            --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            --transition: all 0.3s ease;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #F5F7FA 0%, #C3CFE2 100%);
-            min-height: 100vh;
-            color: var(--text-dark);
-            line-height: 1.6;
+            background-color: #0f0f10;
+            color: #e5e7eb;
         }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
+        .chalk-effect {
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
         }
-
-        header {
-            background: var(--bg-dark);
-            color: var(--text-light);
-            padding: 20px 0;
-            text-align: center;
-            margin-bottom: 30px;
-            border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow);
-        }
-
-        header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-        }
-
-        header p {
-            font-size: 1.1rem;
-            opacity: 0.9;
-        }
-
-        .main-content {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-            margin-bottom: 30px;
-        }
-
-        .input-section, .result-section {
-            background: white;
-            padding: 30px;
-            border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow);
-        }
-
-        .section-title {
-            font-size: 1.5rem;
-            color: var(--primary-color);
-            margin-bottom: 25px;
-            padding-bottom: 15px;
-            border-bottom: 3px solid var(--primary-color);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: var(--bg-dark);
-        }
-
-        input[type="text"], select {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #E0E0E0;
-            border-radius: var(--border-radius);
-            font-size: 1rem;
-            transition: var(--transition);
-        }
-
-        input[type="text"]:focus, select:focus {
-            outline: none;
-            border-color: var(--accent-color);
-            box-shadow: 0 0 10px rgba(42, 157, 143, 0.2);
-        }
-
-        .style-options {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .style-option {
-            padding: 10px;
-            border: 2px solid #E0E0E0;
-            border-radius: var(--border-radius);
-            cursor: pointer;
-            text-align: center;
-            transition: var(--transition);
-            font-size: 0.9rem;
-        }
-
-        .style-option:hover {
-            border-color: var(--accent-color);
-            background-color: rgba(42, 157, 143, 0.1);
-        }
-
-        .style-option.selected {
-            border-color: var(--primary-color);
-            background-color: var(--primary-color);
-            color: white;
-        }
-
-        .generate-btn {
-            width: 100%;
-            padding: 15px 20px;
-            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
-            color: white;
-            border: none;
-            border-radius: var(--border-radius);
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .generate-btn:hover {
-            background: linear-gradient(45deg, var(--secondary-color), var(--primary-color));
-            transform: translateY(-2px);
-            box-shadow: var(--box-shadow);
-        }
-
-        .generate-btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .loading {
-            display: none;
-            text-align: center;
-            padding: 40px;
-            color: var(--bg-dark);
-        }
-
-        .loading.active {
-            display: block;
-        }
-
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid var(--primary-color);
+        /* 加载动画 */
+        .loader {
+            border: 3px solid rgba(255, 255, 255, 0.1);
             border-radius: 50%;
+            border-top: 3px solid #3b82f6;
+            width: 24px;
+            height: 24px;
+            -webkit-animation: spin 1s linear infinite; /* Safari */
             animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
         }
-
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-
-        .result-image {
+        /* 模糊背景特效 */
+        .backdrop-blur-custom {
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        /* 轮播容器 - 移除动画，改为静态显示 */
+        .carousel-container {
+            position: relative;
             width: 100%;
-            max-height: 500px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .carousel-image {
+            position: absolute;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            border-radius: 1rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(55, 65, 81, 0.5);
+            max-width: 90%;
+            max-height: 300px;
             object-fit: contain;
-            border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow);
-            margin-bottom: 20px;
         }
-
-        .api-info {
-            background: var(--bg-light);
-            padding: 15px;
-            border-radius: var(--border-radius);
-            border-left: 4px solid var(--accent-color);
-            margin-bottom: 20px;
-            font-size: 0.9rem;
+        .carousel-image.active {
+            opacity: 1;
         }
-
-        .admin-link {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: var(--bg-dark);
-            color: white;
-            padding: 12px 20px;
-            border-radius: 25px;
-            text-decoration: none;
-            transition: var(--transition);
-            box-shadow: var(--box-shadow);
-            font-size: 0.9rem;
+        /* 下载按钮动画 */
+        .download-btn {
+            animation: pulse-download 2s infinite;
         }
-
-        .admin-link:hover {
-            background: var(--primary-color);
-            transform: translateY(-2px);
+        @keyframes pulse-download {
+            0%, 50%, 100% { transform: translateY(0px); }
+            25%, 75% { transform: translateY(-3px); }
         }
-
-        .error-message {
-            background: var(--error-color);
-            color: white;
-            padding: 15px;
-            border-radius: var(--border-radius);
-            margin-bottom: 20px;
-            display: none;
+        /* 新增样式 */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
         }
-
-        .error-message.active {
-            display: block;
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-
-        @media (max-width: 768px) {
-            .main-content {
-                grid-template-columns: 1fr;
-            }
-
-            header h1 {
-                font-size: 2rem;
-            }
-
-            .admin-link {
-                bottom: 10px;
-                right: 10px;
-                font-size: 0.8rem;
-                padding: 10px 15px;
-            }
+        .hover-scale {
+            transition: transform 0.3s ease;
         }
-
-        .debug-info {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 4px;
-            padding: 10px;
-            margin-top: 10px;
-            font-size: 0.8rem;
-            font-family: monospace;
-            display: none;
+        .hover-scale:hover {
+            transform: scale(1.05);
         }
-
-        .debug-info.active {
-            display: block;
+        /* 占位符背景图样式 - 改为contain显示完整图片 */
+        .placeholder-bg {
+            background-image: url('https://pic.icon.pp.ua/generated/IMG_4874.jpeg');
+            background-size: contain !important;
+            background-position: center !important;
+            background-repeat: no-repeat !important;
+            position: relative;
+            min-height: 400px !important;
+            width: 100% !important;
+            height: auto !important;
+        }
+        .placeholder-bg::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.3); /* 减少遮罩透明度 */
+            border-radius: 1rem;
+        }
+        .placeholder-content {
+            position: relative;
+            z-index: 2;
         }
     </style>
 </head>
-<body>
-    <header>
-        <h1>
-            <i class="fas fa-chalkboard"></i>
-            黑板画 AI 生成器
-        </h1>
-        <p>输入内容，选择风格，一键生成精美黑板画</p>
-    </header>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 relative">
 
-    <div class="container">
-        <main class="main-content">
-            <section class="input-section">
-                <h2 class="section-title">
-                    <i class="fas fa-sliders-h"></i>
-                    配置选项
-                </h2>
+    <!-- 主容器 -->
+    <div class="w-full max-w-4xl bg-[#18181b] border border-gray-800 rounded-2xl shadow-2xl overflow-hidden z-10 fade-in">
+        
+        <!-- 头部区域 -->
+        <div class="p-8 border-b border-gray-800 text-center">
+            <h1 class="text-4xl font-bold tracking-tight text-white mb-2 chalk-effect">AI 粉笔画生成器</h1>
+            <p class="text-gray-400 text-sm uppercase tracking-widest">基于 Gemini AI • 多种艺术风格</p>
+        </div>
 
-                <div class="form-group">
-                    <label for="character">请输入角色/物品名称：</label>
-                    <input type="text" id="character" placeholder="例如：Hello Kitty、皮卡丘、小猫咪" value="小猫咪">
-                </div>
+        <!-- 核心交互区 -->
+        <div class="flex flex-col md:flex-row">
+            
+            <!-- 左侧：控制面板 -->
+            <div class="w-full md:w-1/3 p-8 border-r border-gray-800 bg-[#202023]">
+                <form id="artForm" class="space-y-6">
+                    
+                    <!-- 输入框 -->
+                    <div>
+                        <label for="character" class="block text-sm font-medium text-gray-300 mb-2">动漫角色名称</label>
+                        <input type="text" id="character" name="character" required
+                            class="w-full bg-[#18181b] border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                            placeholder="例如：疯狂动物城2">
+                        <p class="mt-2 text-xs text-gray-500">输入动漫角色名称即可生成艺术画作。</p>
+                    </div>
 
-                <div class="form-group">
-                    <label>请选择图片风格：</label>
-                    <select id="style">
-                        <option value="blackboard">教室黑板粉笔画</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>推荐风格（点击选择）：</label>
-                    <div class="style-options">
-                        <div class="style-option selected" data-style="blackboard">
-                            <i class="fas fa-chalkboard"></i><br>黑板画
+                    <!-- 风格选择 -->
+                    <div>
+                        <label for="style" class="block text-sm font-medium text-gray-300 mb-2">绘画风格</label>
+                        <div class="relative">
+                            <select id="style" name="style" 
+                                class="w-full bg-[#18181b] border border-gray-700 rounded-lg px-4 py-3 text-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
+                                <!-- 动态加载选项 -->
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <button class="generate-btn" id="generate">
-                    <i class="fas fa-magic"></i>
-                    开始生成
-                </button>
-            </section>
-
-            <section class="result-section">
-                <h2 class="section-title">
-                    <i class="fas fa-image"></i>
-                    生成结果
-                </h2>
-
-                <div class="error-message" id="error"></div>
-
-                <div class="loading" id="loading">
-                    <div class="spinner"></div>
-                    <p>AI 正在生成您的黑板画，请稍候...</p>
-                </div>
-
-                <div id="result" style="display: none;">
-                    <img class="result-image" id="result-image" alt="生成的黑板画">
-
-                    <div class="api-info" id="api-info">
-                        <i class="fas fa-info-circle"></i>
-                        <span id="api-details"></span>
+                    <!-- 生成按钮 -->
+                    <div>
+                        <button type="submit" id="generateBtn"
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed hover-scale">
+                            <span>生成作品</span>
+                        </button>
+                        <!-- 计数器显示 -->
+                        <p id="limitCounter" class="text-center text-xs text-gray-500 mt-3">今日剩余免费额度: 3/3</p>
                     </div>
+                    
+                    <!-- 状态信息 -->
+                    <div id="statusMessage" class="hidden text-center text-sm p-3 rounded bg-gray-800 text-gray-300"></div>
+                </form>
 
-                    <div class="debug-info" id="debug-info"></div>
+                <!-- 说明文档 -->
+                <div class="mt-8 pt-6 border-t border-gray-700">
+                    <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">使用说明</h3>
+                    <ul class="text-xs text-gray-500 space-y-2 list-disc list-inside">
+                        <li>输入角色名称</li>
+                        <li>选择绘画风格</li>
+                        <li>AI 生成提示词</li>
+                        <li>Gemini 绘制作品</li>
+                        <li>图片存储到 R2</li>
+                    </ul>
                 </div>
-            </section>
-        </main>
+            </div>
+
+            <!-- 右侧：展示区域 -->
+            <div class="w-full md:w-2/3 p-8 flex items-center justify-center bg-[#0f0f10] min-h-[500px] relative">
+                
+                <!-- 占位符 - 添加背景图 -->
+                <div id="placeholder" class="text-center placeholder-bg flex flex-col items-center justify-center">
+                    <div class="placeholder-content">
+                        <div class="inline-block p-4 rounded-full bg-gray-800/80 backdrop-blur-sm mb-4">
+                            <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        </div>
+                        <p class="text-white text-lg font-medium">您的画作将在这里显示</p>
+                    </div>
+                </div>
+
+                <!-- 加载中：静态轮播展示 -->
+                <div id="loadingState" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-[#0f0f10] z-10">
+                    <!-- 静态轮播背景 - 单个图片容器 -->
+                    <div id="carouselContainer" class="carousel-container mb-6">
+                        <!-- 图片将由JavaScript轮播管理器动态生成 -->
+                    </div>
+                    
+                    <!-- 进度信息 -->
+                    <div class="text-center">
+                        <div class="flex items-center justify-center space-x-3 mb-3">
+                            <div class="loader"></div>
+                            <p class="text-blue-400 text-sm animate-pulse font-medium">正在设计提示词...</p>
+                        </div>
+                        <p class="text-gray-600 text-xs animate-fade-in" id="loadingStep">连接到神经网络</p>
+                        <div class="mt-2 w-64 mx-auto">
+                            <div class="w-full bg-gray-700/50 rounded-full h-1">
+                                <div class="bg-gradient-to-r from-blue-600 to-indigo-600 h-1 rounded-full transition-all duration-500" id="progressBar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <p class="text-gray-500 text-xs mt-2">欣赏往期作品，耐心等待您的专属创作...</p>
+                    </div>
+                </div>
+
+                <!-- 结果图片 -->
+                <img id="resultImage" class="hidden max-w-full max-h-[600px] rounded shadow-2xl border border-gray-800 object-contain" alt="Generated Art">
+                
+                <!-- 操作栏：只有下载按钮 -->
+                <div id="actionToolbar" class="hidden absolute bottom-4 right-4">
+                    <!-- 下载按钮 - 改为普通按钮，移除target="_blank" -->
+                    <button id="downloadBtn" 
+                        class="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white p-3 rounded-full transition download-btn flex items-center justify-center" 
+                        title="下载图片">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <a href="/admin.html" class="admin-link">
-        <i class="fas fa-cog"></i>
-        管理后台
-    </a>
+    <!-- 页脚 -->
+    <footer class="mt-8 text-center">
+        <a href="https://github.com/keenturbo/AI-Chalkboard-Art" target="_blank" class="text-gray-600 text-xs hover:text-gray-400 transition flex items-center justify-center space-x-1">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"></path></svg>
+            <span>Open Source on GitHub</span>
+        </a>
+    </footer>
+
+    <!-- 额度耗尽弹窗 (Modal) -->
+    <div id="limitModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-custom p-4">
+        <div class="bg-[#18181b] border border-gray-700 rounded-2xl shadow-2xl max-w-md w-full p-8 text-center transform transition-all scale-100 relative">
+            <!-- 关闭按钮 (可选，防止卡死) -->
+            <button onclick="closeLimitModal()" class="absolute top-4 right-4 text-gray-500 hover:text-white">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+
+            <div class="mb-6">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-900/30 text-blue-400 mb-4">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                </div>
+                <h2 class="text-2xl font-bold text-white mb-2">今日灵感已耗尽</h2>
+                <p class="text-gray-400 text-sm">为了保证服务稳定，每天限制免费生成 3 次。<br>明天会自动重置额度哦！</p>
+            </div>
+
+            <div class="space-y-4">
+                <!-- 选项A: 硬核部署 -->
+                <a href="https://github.com/keenturbo/AI-Chalkboard-Art" target="_blank" class="block w-full bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white font-medium py-3 px-4 rounded-lg transition flex items-center justify-center space-x-2">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"></path></svg>
+                    <span>在 GitHub 上免费部署同款</span>
+                </a>
+
+                <!-- 选项B: 打赏支持 (展开逻辑) -->
+                <div class="relative">
+                    <button onclick="toggleDonate()" class="block w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium py-3 px-4 rounded-lg transition flex items-center justify-center space-x-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        <span>请作者喝杯咖啡 (支持开发)</span>
+                    </button>
+                    <!-- 隐藏的二维码区域 -->
+                    <div id="donateArea" class="hidden mt-4 p-4 bg-white rounded-lg animate-fade-in">
+                        <img src="https://pic.turbo.netlib.re/generated/IMG_4859.jpeg" alt="赞赏码" class="w-48 h-48 object-contain mx-auto">
+                        <p class="text-gray-800 text-xs mt-2 font-medium">微信扫码，请我喝咖啡</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
-        let currentRequest = null;
+        const form = document.getElementById('artForm');
+        const generateBtn = document.getElementById('generateBtn');
+        const placeholder = document.getElementById('placeholder');
+        const loadingState = document.getElementById('loadingState');
+        const resultImage = document.getElementById('resultImage');
+        const statusMessage = document.getElementById('statusMessage');
+        const loadingStep = document.getElementById('loadingStep');
+        const actionToolbar = document.getElementById('actionToolbar');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const limitCounter = document.getElementById('limitCounter');
+        const limitModal = document.getElementById('limitModal');
+        const donateArea = document.getElementById('donateArea');
+        const carouselContainer = document.getElementById('carouselContainer');
+        const progressBar = document.getElementById('progressBar');
 
-        document.addEventListener('DOMContentLoaded', function() {
+        const MAX_DAILY_LIMIT = 3;
+
+        // === 动态加载配置 ===
+        let SITE_CONFIG = {
+            gallery_images: [],
+            prompts: []
+        };
+
+        // 从API加载配置
+        async function loadSiteConfig() {
+            try {
+                const response = await fetch('/api/admin-config');
+                if (response.ok) {
+                    const config = await response.json();
+                    SITE_CONFIG = config;
+                    updateStyleOptions();
+                    console.log('已加载管理员配置');
+                }
+            } catch (error) {
+                console.error('加载配置失败，使用默认配置:', error);
+                // 使用默认配置
+                SITE_CONFIG = {
+                    gallery_images: [
+                        'https://pic.icon.pp.ua/generated/IMG_4837.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4839.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4840.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4841.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4848.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4849.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4853.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4855.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4856.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4857.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4860.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4863.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4865.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4867.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4869.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4870.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4871.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4872.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4874.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4875.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4876.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4877.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4879.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4880.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4881.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4882.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4883.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4884.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4885.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4886.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4887.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4889.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4890.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4891.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4892.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4893.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4894.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4895.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4896.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4899.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4900.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4901.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4902.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4905.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4906.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4907.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4908.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4909.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4910.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4911.jpeg',
+                        'https://pic.icon.pp.ua/generated/IMG_4912.jpeg'
+                    ],
+                    prompts: [
+                        { name: '黑板粉笔画', key: 'blackboard', prompt: '' },
+                        { name: '现实主义云彩', key: 'cloud', prompt: '' },
+                        { name: '课本铅笔画', key: 'textbook', prompt: '' }
+                    ]
+                };
+                updateStyleOptions();
+            }
+        }
+
+        // 更新风格选择器
+        function updateStyleOptions() {
             const styleSelect = document.getElementById('style');
-            const styleOptions = document.querySelectorAll('.style-option');
-            const generateBtn = document.getElementById('generate');
-            const loading = document.getElementById('loading');
-            const result = document.getElementById('result');
-            const error = document.getElementById('error');
-            const characterInput = document.getElementById('character');
-
-            // 处理风格选项点击
-            styleOptions.forEach(option => {
-                option.addEventListener('click', function() {
-                    styleOptions.forEach(opt => opt.classList.remove('selected'));
-                    this.classList.add('selected');
-                    const style = this.dataset.style;
-                    styleSelect.value = style;
-                });
+            styleSelect.innerHTML = '';
+            
+            // 添加对应的emoji映射
+            const emojiMap = {
+                'blackboard': '🏫',
+                'cloud': '☁️',
+                'textbook': '✏️',
+                'zombie': '💀',
+                'anime': '🎌',
+                'realistic': '📸'
+            };
+            
+            SITE_CONFIG.prompts.forEach(prompt => {
+                const option = document.createElement('option');
+                option.value = prompt.key;
+                const emoji = emojiMap[prompt.key] || '🎨';
+                const defaultText = prompt.key === 'blackboard' ? ' (默认)' : '';
+                option.textContent = `${emoji} ${prompt.name}${defaultText}`;
+                option.selected = prompt.key === 'blackboard';
+                styleSelect.appendChild(option);
             });
+        }
 
-            // 处理下拉菜单变化
-            styleSelect.addEventListener('change', function() {
-                styleOptions.forEach(opt => opt.classList.remove('selected'));
-                const selectedOption = document.querySelector(`[data-style="${this.value}"]`);
-                if (selectedOption) {
-                    selectedOption.classList.add('selected');
-                }
-            });
-
-            // 生成按钮点击事件
-            generateBtn.addEventListener('click', generate);
-
-            // 支持回车键生成
-            characterInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    generate();
-                }
-            });
-
-            // 自动生成（可选）
-            // generate();
-        });
-
-        async function generate() {
-            const character = document.getElementById('character').value.trim();
-            const style = document.getElementById('style').value;
-            const loading = document.getElementById('loading');
-            const result = document.getElementById('result');
-            const error = document.getElementById('error');
-            const generateBtn = document.getElementById('generate');
-            const apiDetails = document.getElementById('api-details');
-            const debugInfo = document.getElementById('debug-info');
-
-            if (!character) {
-                showError('请输入角色或物品名称');
-                return;
+        // === 轮播管理器：静态展示 + 预加载系统 ===
+        class CarouselManager {
+            constructor() {
+                this.currentIndex = 0;
+                this.pool = [];
+                this.preloadedImages = new Map();
+                this.scheduleInterval = null;
+                this.isRunning = false;
             }
 
-            // 重置状态
-            loading.classList.add('active');
-            result.style.display = 'none';
-            error.classList.remove('active');
-            generateBtn.disabled = true;
-            debugInfo.classList.remove('active');
+            startCarousel(stopTime) {
+                // 检查是否为第二次及以上生成，包含最新作品
+                const usageCount = getDailyUsage();
+                this.pool = getCarouselImages(usageCount > 0);
+                
+                this.stopCarousel();
+                this.isRunning = true;
+                
+                // 初始化轮播容器
+                this.initCarouselContainer();
+                
+                // 立即显示第一张图片
+                this.showImage(0);
+                
+                // 每4秒切换一张图片
+                this.scheduleInterval = setInterval(() => {
+                    if (!this.isRunning || Date.now() >= stopTime) {
+                        this.stopCarousel();
+                        return;
+                    }
+                    
+                    this.currentIndex = (this.currentIndex + 1) % this.pool.length;
+                    this.showImage(this.currentIndex);
+                }, 4000); // 4秒间隔：3.5秒展示 + 0.5秒过渡
+            }
+
+            initCarouselContainer() {
+                // 创建单个img元素用于轮播
+                const img = document.createElement('img');
+                img.className = 'carousel-image active';
+                img.alt = '作品展示';
+                carouselContainer.innerHTML = '';
+                carouselContainer.appendChild(img);
+            }
+
+            stopCarousel() {
+                if (this.scheduleInterval) {
+                    clearInterval(this.scheduleInterval);
+                    this.scheduleInterval = null;
+                }
+                this.isRunning = false;
+            }
+
+            showImage(index) {
+                const imgSrc = this.pool[index];
+                const img = carouselContainer.querySelector('img');
+                
+                if (!img) return;
+                
+                // 重试逻辑
+                img.onerror = () => {
+                    console.error(`轮播图片加载失败: ${imgSrc}`);
+                    img.src = SITE_CONFIG.gallery_images[0] || 'https://pic.icon.pp.ua/generated/IMG_4837.jpeg';
+                };
+                
+                img.src = imgSrc;
+            }
+        }
+
+        // 实例化轮播管理器
+        const carouselManager = new CarouselManager();
+
+        // === 获取走马灯图片列表 ===
+        function getCarouselImages(includeLatest = false) {
+            let images = [];
+            const GALLERY_POOL = SITE_CONFIG.gallery_images;
+            
+            if (includeLatest) {
+                // 获取用户最近生成的作品（最多3张）
+                const recentWorks = JSON.parse(sessionStorage.getItem('recentWorks') || '[]');
+                images = [...recentWorks];
+            }
+            
+            // 从精选池中随机选择剩余的图片，凑够30张
+            const pool = GALLERY_POOL.filter(img => !images.includes(img)); // 去重
+            const needed = 30 - images.length;
+            
+            if (needed > 0) {
+                // 随机打乱池并取前needed张
+                const shuffled = [...pool].sort(() => Math.random() - 0.5);
+                images = images.concat(shuffled.slice(0, needed));
+            }
+            
+            return images.slice(0, 30); // 确保最多30张
+        }
+
+        // === 下载图片函数：使用 fetch + blob 方式 ===
+        async function downloadImage(url, filename) {
+            try {
+                console.log('开始下载图片:', url);
+                
+                // 使用 fetch 获取图片数据
+                const response = await fetch(url, {
+                    mode: 'cors',
+                    credentials: 'omit'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                // 转换为 blob
+                const blob = await response.blob();
+                
+                // 创建下载链接
+                const downloadUrl = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = downloadUrl;
+                link.download = filename;
+                
+                // 触发下载
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                // 清理资源
+                URL.revokeObjectURL(downloadUrl);
+                
+                console.log('图片下载成功:', filename);
+                
+            } catch (error) {
+                console.error('下载失败:', error);
+                showStatus('下载失败，正在打开新窗口...', 'error');
+                
+                // 降级方案：直接打开新窗口
+                window.open(url, '_blank');
+            }
+        }
+
+        // === 每日限额逻辑 ===
+        function getDailyUsage() {
+            const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+            const storedDate = localStorage.getItem('last_usage_date');
+            
+            if (storedDate !== today) {
+                // 新的一天，重置
+                localStorage.setItem('last_usage_date', today);
+                localStorage.setItem('daily_count', '0');
+                return 0;
+            }
+            return parseInt(localStorage.getItem('daily_count') || '0', 10);
+        }
+
+        function incrementUsage() {
+            const count = getDailyUsage();
+            localStorage.setItem('daily_count', (count + 1).toString());
+            updateCounterUI();
+        }
+
+        function updateCounterUI() {
+            const used = getDailyUsage();
+            const remaining = Math.max(0, MAX_DAILY_LIMIT - used);
+            limitCounter.textContent = `今日剩余免费额度: ${remaining}/${MAX_DAILY_LIMIT}`;
+            
+            if (remaining === 0) {
+                limitCounter.classList.add('text-red-500');
+            } else {
+                limitCounter.classList.remove('text-red-500');
+            }
+        }
+
+        function showLimitModal() {
+            limitModal.classList.remove('hidden');
+        }
+
+        function closeLimitModal() {
+            limitModal.classList.add('hidden');
+        }
+
+        function toggleDonate() {
+            donateArea.classList.toggle('hidden');
+        }
+
+        // === 原有逻辑 ===
+        function updateLoadingSteps(style) {
+            if (style === 'cloud') {
+                return ["分析云彩形态...", "调用 Gemini 模型...", "渲染天空光影...", "保存到 R2 存储...", "完成处理..."];
+            } else if (style === 'textbook') {
+                return ["打开课本页面...", "调用 Gemini 模型...", "绘制铅笔涂鸦...", "添加纸张质感...", "完成处理..."];
+            } else {
+                return ["生成提示词中...", "调用 Gemini 模型...", "渲染粉笔纹理...", "保存到 R2 存储...", "完成处理..."];
+            }
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // 1. 检查额度
+            if (getDailyUsage() >= MAX_DAILY_LIMIT) {
+                showLimitModal();
+                return;
+            }
+            
+            // 2. UI Reset
+            const character = document.getElementById('character').value.trim();
+            const style = document.getElementById('style').value;
+            if (!character) return;
+
+            setLoading(true);
+            showStatus(null);
+            
+            // 计算停止时间（平均24秒 + 缓冲6秒）
+            const stopTime = Date.now() + 30000; // 30秒后停止
+            
+            // 启动静态轮播
+            carouselManager.startCarousel(stopTime);
+            
+            const steps = updateLoadingSteps(style);
+            let stepIndex = 0;
+            const stepInterval = setInterval(() => {
+                if (stepIndex < steps.length) {
+                    const step = steps[stepIndex++];
+                    loadingStep.textContent = step;
+                    // 更新进度条
+                    progressBar.style.width = `${(stepIndex / steps.length) * 100}%`;
+                }
+            }, 1500);
 
             try {
-                // 取消之前的请求
-                if (currentRequest) {
-                    currentRequest.abort();
-                }
-
-                // 发送请求到新的多API兜底端点
-                const response = await fetch('/api/generate-new', {
+                // 添加调试：记录请求参数
+                console.log('开始生成图片请求:', { character, style });
+                
+                const response = await fetch('/api/generate', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
                         character_name: character,
                         style: style
                     })
                 });
 
+                // 添加调试：检查响应状态
+                console.log('收到API响应:', response.status, response.statusText);
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error('API错误响应:', errorData);
+                    throw new Error(errorData.error || '生成失败');
+                }
+
                 const data = await response.json();
-                
-                console.log('新API响应:', data);
+                console.log('API响应数据:', data);
 
-                if (data.success && data.image_url) {
-                    // 成功生成图片
-                    displayResult(data.image_url, data);
-                } else if (data.image_url) {
-                    // 旧格式兼容
-                    displayResult(data.image_url, data);
-                } else {
-                    // 显示详细错误信息
-                    const errorMsg = data.error || '生成失败';
-                    const debugMsg = data.details || data.debug || '';
-                    showError(errorMsg, debugMsg);
+                // 添加超时机制：30秒超时
+                const timeout = setTimeout(() => {
+                    console.error('请求超时:', { url: '/api/generate', character, style });
+                }, 30000);
+
+                if (data.image_url) {
+                    clearTimeout(timeout);
                     
-                    // 显示调试信息（如果有）
-                    if (data.debug) {
-                        debugInfo.innerHTML = `
-                            <strong>调试信息:</strong><br>
-                            ${JSON.stringify(data.debug, null, 2)}
-                        `;
-                        debugInfo.classList.add('active');
+                    // 3. 成功生成，扣除额度
+                    incrementUsage();
+
+                    // 添加调试：监控图片加载
+                    console.log('开始加载生成图片:', data.image_url);
+                    
+                    const img = new Image();
+                    img.onload = () => {
+                        console.log('生成图片加载成功:', data.image_url);
+                    };
+                    img.onerror = (error) => {
+                        console.error('生成图片加载失败:', error, data.image_url);
+                        // 重试逻辑
+                        setTimeout(() => {
+                            console.log('重试加载:', data.image_url);
+                            const retryImg = new Image();
+                            retryImg.onload = () => console.log('重试成功:', data.image_url);
+                            retryImg.src = data.image_url;
+                            resultImage.src = data.image_url;
+                        }, 2000);
+                    };
+                    img.src = data.image_url;
+
+                    // 缓存最新作品到sessionStorage，供走马灯使用
+                    const recentWorks = JSON.parse(sessionStorage.getItem('recentWorks') || '[]');
+                    if (!recentWorks.includes(data.image_url)) {
+                        recentWorks.unshift(data.image_url);
+                        sessionStorage.setItem('recentWorks', JSON.stringify(recentWorks.slice(0, 3)));
                     }
+
+                    resultImage.src = data.image_url;
+                    
+                    // 设置下载按钮点击事件，修复文件后缀问题 - 删除了.jpg硬编码
+                    downloadBtn.onclick = () => {
+                        const filename = `ai-chalkboard-${character.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '-')}-${style}.png`;
+                        downloadImage(data.image_url, filename);
+                    };
+                    
+                    resultImage.onload = () => {
+                        clearInterval(stepInterval);
+                        carouselManager.stopCarousel();
+                        setLoading(false);
+                        resultImage.classList.remove('hidden');
+                        placeholder.classList.add('hidden');
+                        actionToolbar.classList.remove('hidden');
+                    };
+                    
+                    resultImage.onerror = () => {
+                        clearInterval(stepInterval);
+                        carouselManager.stopCarousel();
+                        setLoading(false);
+                        showStatus('图片加载失败，请检查 R2 配置', 'error');
+                    };
+                } else {
+                    clearTimeout(timeout);
+                    throw new Error('未返回图片URL');
                 }
 
-            } catch (err) {
-                console.error('请求错误:', err);
-                let errorMsg = '网络请求失败';
-                
-                if (err.name === 'AbortError') {
-                    errorMsg = '请求已取消';
-                } else if (err.message) {
-                    errorMsg = `网络错误: ${err.message}`;
-                }
-                
-                showError(errorMsg);
-            } finally {
-                loading.classList.remove('active');
+            } catch (error) {
+                clearInterval(stepInterval);
+                carouselManager.stopCarousel();
+                setLoading(false);
+                showStatus(error.message, 'error');
+                console.error('生成错误:', error);
+            }
+        });
+
+        function setLoading(isLoading) {
+            if (isLoading) {
+                generateBtn.disabled = true;
+                generateBtn.innerHTML = '<div class="loader border-t-white w-4 h-4 mr-2"></div> 正在生成...';
+                loadingState.classList.remove('hidden');
+                resultImage.classList.add('hidden');
+                actionToolbar.classList.add('hidden');
+                placeholder.classList.add('hidden');
+                // 重置进度条
+                progressBar.style.width = '0%';
+            } else {
                 generateBtn.disabled = false;
+                generateBtn.innerHTML = '<span>生成作品</span>';
+                loadingState.classList.add('hidden');
             }
         }
 
-        function displayResult(imageUrl, data) {
-            const result = document.getElementById('result');
-            const error = document.getElementById('error');
-            const resultImage = document.getElementById('result-image');
-            const apiDetails = document.getElementById('api-details');
-            const debugInfo = document.getElementById('debug-info');
-
-            // 显示图片
-            resultImage.src = imageUrl;
-            result.style.display = 'block';
-            error.classList.remove('active');
-
-            // 显示API信息
-            const apiInfo = [];
-            if (data.api_used) {
-                apiInfo.push(`🤖 API: ${data.api_used}`);
+        function showStatus(msg, type = 'info') {
+            if (!msg) {
+                statusMessage.classList.add('hidden');
+                return;
             }
-            if (data.style) {
-                apiInfo.push(`🎨 风格: ${data.style}`);
-            }
-            if (data.processing_time) {
-                apiInfo.push(`⏱️ 耗时: ${Math.round(data.processing_time / 1000)}s`);
-            }
-            if (data.prompt_used) {
-                apiInfo.push(`📝 提示词长度: ${data.prompt_used.length} 字符`);
-            }
-
-            apiDetails.innerHTML = apiInfo.join(' | ');
-
-            // 显示调试信息（如果有）
-            if (data.debug) {
-                debugInfo.innerHTML = `
-                    <strong>调试信息:</strong><br>
-                    ${JSON.stringify(data.debug, null, 2)}
-                `;
-                debugInfo.classList.add('active');
-            }
-
-            result.scrollIntoView({ behavior: 'smooth' });
+            statusMessage.textContent = msg;
+            statusMessage.className = `text-center text-sm p-3 rounded ${type === 'error' ? 'bg-red-900/50 text-red-200 border border-red-800' : 'bg-gray-800 text-gray-300'}`;
+            statusMessage.classList.remove('hidden');
         }
 
-        function showError(message, details = '') {
-            const error = document.getElementById('error');
-            const result = document.getElementById('result');
-            
-            let errorHtml = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
-            if (details) {
-                errorHtml += `<details><summary>详细信息</summary><pre>${details}</pre></details>`;
+        // 监听风格变化，动态更新占位符文本
+        document.getElementById('style').addEventListener('change', function(e) {
+            const style = e.target.value;
+            let placeholderText;
+            if (style === 'cloud') {
+                placeholderText = '您的云彩画作将在这里显示';
+            } else if (style === 'textbook') {
+                placeholderText = '您的铅笔涂鸦将在这里显示';
+            } else {
+                placeholderText = '您的黑板画作将在这里显示';
             }
-            
-            error.innerHTML = errorHtml;
-            error.classList.add('active');
-            result.style.display = 'none';
-            error.scrollIntoView({ behavior: 'smooth' });
-        }
+            document.querySelector('#placeholder .placeholder-content p').textContent = placeholderText;
+        });
+
+        // 初始化
+        updateCounterUI();
+
+        // 添加键盘快捷键支持
+        document.addEventListener('keydown', function(e) {
+            // Ctrl+Enter 或 Cmd+Enter 提交表单
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                form.dispatchEvent(new Event('submit'));
+            }
+            // ESC 关闭弹窗
+            if (e.key === 'Escape') {
+                closeLimitModal();
+            }
+        });
+
+        // 添加页面加载动画
+        window.addEventListener('load', function() {
+            document.querySelector('.fade-in')?.classList.add('fade-in');
+        });
+
+        // 页面加载时初始化配置
+        window.addEventListener('DOMContentLoaded', function() {
+            loadSiteConfig();
+        });
     </script>
 </body>
 </html>
