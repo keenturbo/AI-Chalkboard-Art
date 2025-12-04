@@ -15,15 +15,18 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     // 验证管理员权限
     const authHeader = request.headers.get('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log('[Admin-API-Config] Missing or invalid authorization header');
       return new Response(JSON.stringify({ error: 'Missing authorization' }), { status: 401 });
     }
 
     const token = authHeader.slice(7);
     const isValid = await validateAdminToken(env, token);
     if (!isValid) {
+      console.log('[Admin-API-Config] Invalid token:', token.slice(0, 10) + '...');
       return new Response(JSON.stringify({ error: 'Invalid authorization' }), { status: 401 });
     }
 
+    console.log('[Admin-API-Config] Token validated successfully for action:', action);
     const body = await request.json();
 
     switch (action) {
@@ -61,14 +64,18 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     // 验证管理员权限
     const authHeader = request.headers.get('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log('[Admin-API-Config] Missing or invalid authorization header');
       return new Response(JSON.stringify({ error: 'Missing authorization' }), { status: 401 });
     }
 
     const token = authHeader.slice(7);
     const isValid = await validateAdminToken(env, token);
     if (!isValid) {
+      console.log('[Admin-API-Config] Invalid token:', token.slice(0, 10) + '...');
       return new Response(JSON.stringify({ error: 'Invalid authorization' }), { status: 401 });
     }
+
+    console.log('[Admin-API-Config] Token validated successfully for GET action:', action);
 
     switch (action) {
       case 'list':
@@ -89,26 +96,34 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 };
 
 /**
- * 验证管理员token
+ * 验证管理员token - 与admin-config.ts中的逻辑保持一致
  */
 async function validateAdminToken(env: Env, token: string): Promise<boolean> {
   try {
     // 从KV获取管理员配置
     const adminConfigStr = await env.ADMIN_KV.get('admin_config');
     if (!adminConfigStr) {
+      console.log('[Admin-API-Config] No admin config found in KV');
       return false;
     }
 
     const adminConfig = JSON.parse(adminConfigStr);
-    const { credentials } = adminConfig;
-
+    
+    // 支持新旧两种格式的凭证存储
+    let credentials = adminConfig.admin_credentials || adminConfig.credentials;
+    
     if (!credentials || !credentials.username || !credentials.password) {
+      console.log('[Admin-API-Config] No valid credentials found in config');
       return false;
     }
 
-    // 简单的token验证（实际项目中应该使用更安全的方式）
+    // 验证token格式：base64编码的 username:password
     const expectedToken = btoa(`${credentials.username}:${credentials.password}`);
-    return token === expectedToken;
+    const isValid = token === expectedToken;
+    
+    console.log(`[Admin-API-Config] Token validation: expected credentials=${credentials.username}:${credentials.password}, isValid=${isValid}`);
+    
+    return isValid;
   } catch (error) {
     console.error('[Admin-API-Config] Token validation error:', error);
     return false;
@@ -121,6 +136,8 @@ async function validateAdminToken(env: Env, token: string): Promise<boolean> {
 async function handleAddAPI(env: Env, body: any): Promise<Response> {
   const { name, provider, baseUrl, apiKey, model, priority = 5, enabled = true } = body;
 
+  console.log(`[Admin-API-Config] Adding API: ${name}, provider: ${provider}`);
+
   if (!name || !provider || !apiKey) {
     return new Response(JSON.stringify({ 
       error: 'Missing required fields: name, provider, apiKey' 
@@ -132,11 +149,16 @@ async function handleAddAPI(env: Env, body: any): Promise<Response> {
   const adminConfig = adminConfigStr ? JSON.parse(adminConfigStr) : { api_configs: [], prompts: [] };
 
   // 检查是否已存在同名配置
-  const existingIndex = adminConfig.api_configs.findIndex((config: any) => config.name === name);
+  const existingIndex = adminConfig.api_configs && adminConfig.api_configs.findIndex((config: any) => config.name === name);
   if (existingIndex !== -1) {
     return new Response(JSON.stringify({ 
       error: `API configuration with name '${name}' already exists` 
     }), { status: 409 });
+  }
+
+  // 确保api_configs数组存在
+  if (!adminConfig.api_configs) {
+    adminConfig.api_configs = [];
   }
 
   // 添加新配置
@@ -185,6 +207,11 @@ async function handleUpdateAPI(env: Env, body: any): Promise<Response> {
   }
 
   const adminConfig = JSON.parse(adminConfigStr);
+  
+  if (!adminConfig.api_configs) {
+    adminConfig.api_configs = [];
+  }
+  
   const configIndex = adminConfig.api_configs.findIndex((config: any) => config.name === name);
 
   if (configIndex === -1) {
@@ -233,6 +260,11 @@ async function handleDeleteAPI(env: Env, body: any): Promise<Response> {
   }
 
   const adminConfig = JSON.parse(adminConfigStr);
+  
+  if (!adminConfig.api_configs) {
+    return new Response(JSON.stringify({ error: 'No API configurations found' }), { status: 404 });
+  }
+  
   const configIndex = adminConfig.api_configs.findIndex((config: any) => config.name === name);
 
   if (configIndex === -1) {
@@ -275,6 +307,11 @@ async function handleTestAPI(env: Env, body: any): Promise<Response> {
   }
 
   const adminConfig = JSON.parse(adminConfigStr);
+  
+  if (!adminConfig.api_configs) {
+    return new Response(JSON.stringify({ error: 'No API configurations found' }), { status: 404 });
+  }
+  
   const config = adminConfig.api_configs.find((c: any) => c.name === name);
 
   if (!config) {
@@ -296,6 +333,7 @@ async function handleTestAPI(env: Env, body: any): Promise<Response> {
       message: isWorking ? 'API connection test successful' : 'API connection test failed'
     }));
   } catch (error) {
+    console.error(`[Admin-API-Config] Test failed for ${name}:`, error);
     return new Response(JSON.stringify({ 
       success: false, 
       name,
@@ -339,6 +377,11 @@ async function handleResetAPI(env: Env, body: any): Promise<Response> {
   }
 
   const adminConfig = JSON.parse(adminConfigStr);
+  
+  if (!adminConfig.api_configs) {
+    return new Response(JSON.stringify({ error: 'No API configurations found' }), { status: 404 });
+  }
+  
   const config = adminConfig.api_configs.find((c: any) => c.name === name);
 
   if (!config) {
@@ -364,7 +407,7 @@ async function handleListAPIs(env: Env): Promise<Response> {
   const adminConfigStr = await env.ADMIN_KV.get('admin_config');
   const adminConfig = adminConfigStr ? JSON.parse(adminConfigStr) : { api_configs: [], prompts: [] };
 
-  const configs = adminConfig.api_configs.map(sanitizeConfig);
+  const configs = (adminConfig.api_configs || []).map(sanitizeConfig);
 
   return new Response(JSON.stringify({ 
     success: true, 
@@ -396,7 +439,7 @@ async function handleGetStatus(env: Env): Promise<Response> {
 function getDefaultModel(provider: string): string {
   switch (provider.toLowerCase()) {
     case 'grok':
-      return 'grok-2-image';
+      return 'grok-4.1-fast';  // 使用你正确的模型名
     case 'gemini':
       return 'gemini-3-pro-image-preview';
     default:
