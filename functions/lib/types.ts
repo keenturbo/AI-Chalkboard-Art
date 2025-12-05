@@ -77,7 +77,7 @@ export interface GenerationResult {
 }
 
 // 新增：API状态追踪
-export interface Trace = Array<{
+export type Trace = Array<{
   api: string;
   provider: string;
   status: 'success' | 'failed' | 'timeout' | 'rate_limited';
