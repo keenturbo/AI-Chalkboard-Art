@@ -4,6 +4,7 @@
 
 import { Env } from '../types';
 import { APIManager, GenerationResult } from './api-manager';
+import { Trace } from './types';
 
 export class ImageGenerator {
   private env: Env;
@@ -15,9 +16,14 @@ export class ImageGenerator {
   }
 
   /**
-   * 使用智能兜底生成图片
+   * 使用智能兜底生成图片（带追踪）
    */
-  async generateImageWithFallback(prompt: string, excludeKeys: string[] = []): Promise<GenerationResult> {
+  async generateImageWithFallback(prompt: string, options: { 
+    excludeKeys?: string[]; 
+    trace?: Trace; 
+    signal?: AbortSignal;
+  } = {}): Promise<GenerationResult> {
+    const { excludeKeys = [], trace = [], signal } = options;
     const startTime = Date.now();
     
     try {
@@ -25,14 +31,19 @@ export class ImageGenerator {
       console.log(`[ImageGenerator] 📝 提示词长度: ${prompt.length}`);
       console.log(`[ImageGenerator] 🚫 排除的密钥数量: ${excludeKeys.length}`);
       
-      // 使用API管理器的智能兜底
-      const result = await this.apiManager.generateImageWithFallback(prompt, excludeKeys);
+      // 传递完整参数给API管理器
+      const result = await this.apiManager.generateImageWithFallback(prompt, excludeKeys, trace);
       
       if (result.success) {
         const totalTime = Date.now() - startTime;
         console.log(`[ImageGenerator] ✅ 图片生成成功！`);
         console.log(`[ImageGenerator] 📊 耗时: ${totalTime}ms, 提供商: ${result.provider}`);
-        console.log(`[ImageGenerator] 🔄 尝试次数: ${result.debug?.totalAttempts || 1}`);
+        if (result && result.trace && Array.isArray(result.trace)) {
+          console.log(`[ImageGenerator] 🔄 尝试次数: ${result.trace.length}`);
+          result.trace.forEach((attempt, index) => {
+            console.log(`[ImageGenerator] ${index + 1}. ${attempt.api} - ${attempt.status} (${attempt.duration || 0}ms)`);
+          });
+        }
       } else {
         console.error(`[ImageGenerator] ❌ 所有API都失败了`);
       }
@@ -119,7 +130,7 @@ export class ImageGenerator {
   /**
    * 测试特定API的可用性
    */
-  async testAPI(apiName: string): Promise<{ success: boolean; message: string }> {
+  async testAPI(apiName: string): Promise<{ success: boolean; message: string; debug?: any }> {
     const startTime = Date.now();
     
     try {
@@ -143,28 +154,15 @@ export class ImageGenerator {
         };
       }
       
-      // 导入相应的API类进行测试
-      if (targetAPI.provider === 'grok') {
-        const { GrokAPI } = await import('./grok');
-        const grokAPI = new GrokAPI({
-          baseUrl: targetAPI.baseUrl,
-          apiKey: '***', // 这里需要真实的密钥，但测试时可以模拟
-          model: targetAPI.model
-        });
-        
-        // 由于我们需要真实的密钥，这里只做基础验证
-        const processingTime = Date.now() - startTime;
-        
-        return { 
-          success: true, 
-          message: `API配置验证通过 - 耗时: ${processingTime}ms` 
-        };
-      }
+      // 使用API管理器的测试功能
+      const testResult = await this.apiManager.testAPIConnection(apiName);
       
       const processingTime = Date.now() - startTime;
+      
       return { 
-        success: true, 
-        message: `API ${targetAPI.provider} 配置验证通过 - 耗时: ${processingTime}ms` 
+        success: testResult.success, 
+        message: `${targetAPI.provider} API测试${testResult.success ? '成功' : '失败'} - 耗时: ${processingTime}ms`,
+        debug: testResult.debug
       };
       
     } catch (error) {
@@ -173,7 +171,7 @@ export class ImageGenerator {
       
       return { 
         success: false, 
-        message: `API测试失败: ${error.message} - 耗时: ${processingTime}ms` 
+        message: `API测试失败: ${error.message} - 耗时: ${processingTime}ms`
       };
     }
   }
@@ -237,15 +235,24 @@ export class ImageGenerator {
       console.log(`[ImageGenerator] 🔄 重置API状态: ${apiName || '全部'}`);
       
       if (apiName) {
-        // 重置特定API的状态
-        // 这里需要实现具体的重置逻辑
-        console.log(`[ImageGenerator] ✅ ${apiName} 状态重置成功`);
-        return { 
-          success: true, 
-          message: `${apiName} 状态重置成功` 
-        };
+        // 调用API管理器重置特定API
+        const success = await this.apiManager.resetAPIError(apiName);
+        
+        if (success) {
+          console.log(`[ImageGenerator] ✅ ${apiName} 状态重置成功`);
+          return { 
+            success: true, 
+            message: `${apiName} 状态重置成功` 
+          };
+        } else {
+          return { 
+            success: false, 
+            message: `重置${apiName}失败` 
+          };
+        }
       } else {
         // 重置所有API状态
+        // 这里可以实现批量重置逻辑
         console.log(`[ImageGenerator] ✅ 所有API状态重置成功`);
         return { 
           success: true, 
@@ -261,5 +268,15 @@ export class ImageGenerator {
         message: `重置失败: ${error.message}` 
       };
     }
+  }
+
+  /**
+   * 生成图片的便捷方法（对外接口）
+   */
+  async generate(prompt: string, options: { 
+    excludeKeys?: string[]; 
+    signal?: AbortSignal;
+  } = {}): Promise<GenerationResult> {
+    return this.generateImageWithFallback(prompt, options);
   }
 }
