@@ -60,3 +60,11 @@ export interface AdminConfig {
   prompts: PromptConfig[];
   admin_credentials: AdminCredentials;
 }
+
+// 新增：简单的Trace接口
+export interface TraceStep {
+  api: string;
+  status: 'success' | 'failed';
+  duration: number;
+  error?: string;
+}
