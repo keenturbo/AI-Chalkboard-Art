@@ -8,11 +8,11 @@ export class GeminiModel implements AIModelAdapter {
   private static readonly DEFAULT_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
   private static readonly DEFAULT_MODEL = 'gemini-3-pro-image-preview'; 
 
-  constructor(apiKey: string, env?: Env) {
+  constructor(apiKey: string, modelName?: string, baseUrl?: string) {
     if (!apiKey) throw new Error('Gemini API Key is missing');
     this.apiKey = apiKey;
-    this.baseUrl = env?.AI_MODEL_URL || GeminiModel.DEFAULT_BASE_URL;
-    this.modelName = env?.AI_MODEL_NAME || GeminiModel.DEFAULT_MODEL;
+    this.modelName = modelName || GeminiModel.DEFAULT_MODEL;
+    this.baseUrl = baseUrl || GeminiModel.DEFAULT_BASE_URL;
   }
 
   async generateImage(prompt: string): Promise<ArrayBuffer> {
