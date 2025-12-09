@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI脑洞画布</title>
-    <!-- 引入 Tailwind CSS (无需构建，CDN直接引入) -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 引入 Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
@@ -14,14 +12,6 @@
                 extend: {
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
-                    },
-                    colors: {
-                        chalk: {
-                            50: '#f9fafb',
-                            100: '#f3f4f6',
-                            900: '#111827',
-                        },
-                        board: '#1a1a1a', // 近似黑板深色背景
                     }
                 }
             }
@@ -29,32 +19,22 @@
     </script>
     <style>
         body {
-            background-color: #0f0f10;
+            background: linear-gradient(135deg, #0f0f10 0%, #1a1a2e 100%);
             color: #e5e7eb;
+            min-height: 100vh;
         }
-        .chalk-effect {
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-        }
-        /* 加载动画 */
         .loader {
             border: 3px solid rgba(255, 255, 255, 0.1);
             border-radius: 50%;
             border-top: 3px solid #3b82f6;
             width: 24px;
             height: 24px;
-            -webkit-animation: spin 1s linear infinite; /* Safari */
             animation: spin 1s linear infinite;
         }
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        /* 模糊背景特效 */
-        .backdrop-blur-custom {
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-        }
-        /* 轮播容器 - 移除动画，改为静态显示 */
         .carousel-container {
             position: relative;
             width: 100%;
@@ -71,13 +51,12 @@
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
             border: 1px solid rgba(55, 65, 81, 0.5);
             max-width: 90%;
-            max-height: 300px;
+            max-height: 350px;
             object-fit: contain;
         }
         .carousel-image.active {
             opacity: 1;
         }
-        /* 下载按钮动画 */
         .download-btn {
             animation: pulse-download 2s infinite;
         }
@@ -85,7 +64,6 @@
             0%, 50%, 100% { transform: translateY(0px); }
             25%, 75% { transform: translateY(-3px); }
         }
-        /* 新增样式 */
         .fade-in {
             animation: fadeIn 0.5s ease-in;
         }
@@ -93,13 +71,6 @@
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .hover-scale {
-            transition: transform 0.3s ease;
-        }
-        .hover-scale:hover {
-            transform: scale(1.05);
-        }
-        /* 九宫格样式 */
         .style-card {
             transition: all 0.3s ease;
             cursor: pointer;
@@ -120,37 +91,34 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            aspect-ratio: 1/1;
         }
         .style-card:hover .thumbnail {
             transform: scale(1.05);
         }
-        /* 占位符背景图样式 - 保持原有样式 */
-        .placeholder-bg {
-            background-image: url('https://pic.icon.pp.ua/generated/IMG_4874.jpeg');
-            background-size: contain !important;
-            background-position: center !important;
-            background-repeat: no-repeat !important;
-            position: relative;
-            min-height: 400px !important;
-            width: 100% !important;
-            height: auto !important;
+        .input-hint {
+            color: #6b7280;
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
         }
-        .placeholder-bg::before {
+        .section-title {
+            position: relative;
+            display: inline-block;
+        }
+        .section-title::after {
             content: '';
             position: absolute;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.3); /* 减少遮罩透明度 */
-            border-radius: 1rem;
-        }
-        .placeholder-content {
-            position: relative;
-            z-index: 2;
+            bottom: -4px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, #3b82f6, transparent);
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col items-center justify-center p-4 relative">
+<body class="flex flex-col items-center p-4 md:p-8">
 
-    <!-- 右上角管理入口 - 只显示齿轮 -->
+    <!-- 右上角管理入口 -->
     <div class="fixed top-4 right-4 z-50">
         <a href="/admin.html" class="text-gray-500 hover:text-gray-300 transition p-2 rounded-full hover:bg-gray-800/50" title="管理后台">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -161,46 +129,54 @@
     </div>
 
     <!-- 主容器 -->
-    <div class="w-full max-w-6xl bg-[#18181b] border border-gray-800 rounded-2xl shadow-2xl overflow-hidden z-10 fade-in">
+    <div class="w-full max-w-6xl fade-in">
         
         <!-- 头部区域 -->
-        <div class="p-6 md:p-8 border-b border-gray-800 text-center">
-            <h1 class="text-3xl md:text-4xl font-bold tracking-tight text-white mb-2 chalk-effect">
+        <header class="text-center mb-8 md:mb-12">
+            <h1 class="text-3xl md:text-5xl font-bold tracking-tight text-white mb-3">
                 <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">AI 脑洞画布</span>
             </h1>
             <p class="text-gray-400 text-sm uppercase tracking-wider">选择风格 → 输入内容 → 一键生成艺术作品</p>
-            <p class="text-gray-500 text-xs mt-2">Powered by Gemini AI • 已收录 <span id="styleCount"></span> 种艺术风格</p>
-        </div>
+            <p class="text-gray-500 text-xs mt-2">Powered by Gemini AI • 已收录 <span id="styleCount">9</span> 种艺术风格，持续更新中...</p>
+        </header>
 
-        <!-- 核心交互区：左右布局 -->
-        <div class="flex flex-col lg:flex-row">
+        <!-- 第一步：风格选择（九宫格） - 移到顶部 -->
+        <section class="mb-8">
+            <h2 class="text-lg font-semibold text-gray-300 mb-4 section-title">① 选择风格</h2>
+            <div id="styleGrid" class="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-3 md:gap-4">
+                <!-- 风格卡片由 JavaScript 动态生成 -->
+            </div>
+        </section>
+
+        <!-- 第二步 & 第三步区域：输入控制面板 + 展示区域 -->
+        <div class="flex flex-col lg:flex-row gap-6">
             
-            <!-- 左侧：控制面板 -->
-            <div class="w-full lg:w-1/3 p-6 md:p-8 border-r border-gray-800 bg-[#202023]">
+            <!-- 左侧：输入控制面板 -->
+            <div class="w-full lg:w-1/3 bg-[#18181b] border border-gray-800 rounded-2xl p-6 md:p-8">
+                <h2 class="text-lg font-semibold text-gray-300 mb-4 section-title">② 输入内容</h2>
+                
                 <form id="artForm" class="space-y-6">
-                    
-                    <!-- 输入框 - 动态化 -->
+                    <!-- 动态输入框 -->
                     <div>
-                        <label id="inputLabel" for="character" class="block text-sm font-medium text-gray-300 mb-2">角色名称</label>
+                        <label id="inputLabel" for="character" class="block text-sm font-medium text-gray-300 mb-2">动漫角色名称</label>
                         <input type="text" id="character" name="character" required
-                            class="w-full bg-[#18181b] border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                            class="w-full bg-[#0f0f10] border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                             placeholder="例如：疯狂动物城">
-                        <p id="inputHint" class="mt-2 text-xs text-gray-500">输入动漫角色或卡通人物名称，AI 将绘制黑板粉笔画风格作品。</p>
+                        <p id="inputHint" class="input-hint">输入动漫角色或卡通人物名称，AI 将绘制黑板粉笔画风格作品</p>
                     </div>
 
                     <!-- 隐藏的风格值 -->
-                    <input type="hidden" name="style" id="selectedStyle" value="blackboard">
+                    <input type="hidden" id="selectedStyle" name="style" value="blackboard">
 
                     <!-- 生成按钮 -->
                     <div>
                         <button type="submit" id="generateBtn"
-                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed hover-scale">
+                            class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                             </svg>
                             <span>生成作品</span>
                         </button>
-                        <!-- 计数器显示 -->
                         <p id="limitCounter" class="text-center text-xs text-gray-500 mt-3">今日剩余免费额度: 3/3</p>
                     </div>
                     
@@ -209,7 +185,7 @@
                 </form>
 
                 <!-- 当前选中风格提示 -->
-                <div id="selectedStyleInfo" class="mt-6 p-4 bg-[#18181b] rounded-lg border border-gray-800">
+                <div id="selectedStyleInfo" class="mt-6 p-4 bg-[#0f0f10] rounded-lg border border-gray-800">
                     <p class="text-xs text-gray-500 mb-1">当前风格</p>
                     <p class="text-white font-medium flex items-center">
                         <span id="currentStyleEmoji" class="mr-2 text-xl">🏫</span>
@@ -219,47 +195,31 @@
             </div>
 
             <!-- 右侧：展示区域 -->
-            <div class="w-full lg:w-2/3 p-6 md:p-8 flex items-center justify-center bg-[#0f0f10] min-h-[500px] relative">
+            <div class="w-full lg:w-2/3 bg-[#18181b] border border-gray-800 rounded-2xl p-6 md:p-8 min-h-[450px] flex items-center justify-center relative">
                 
-                <!-- 占位符 - 保持原有样式 -->
-                <div id="placeholder" class="text-center placeholder-bg flex flex-col items-center justify-center w-full">
-                    <div class="placeholder-content">
-                        <div class="inline-block p-4 rounded-full bg-gray-800/80 backdrop-blur-sm mb-4">
-                            <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                        </div>
-                        <p class="text-white text-lg font-medium">选择风格，输入内容，生成您的专属艺术作品</p>
-                    </div>
-                </div>
-
-                <!-- 加载中：静态轮播展示 -->
-                <div id="loadingState" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-[#0f0f10] z-10">
-                    <!-- 静态轮播背景 - 单个图片容器 -->
-                    <div id="carouselContainer" class="carousel-container mb-6">
-                        <!-- 图片将由JavaScript轮播管理器动态生成 -->
-                    </div>
-                    
-                    <!-- 进度信息 -->
+                <!-- 结果图片 -->
+                <img id="resultImage" class="hidden max-w-full max-h-[500px] rounded-xl shadow-2xl border border-gray-700 object-contain" alt="Generated Art">
+                
+                <!-- 加载中：轮播展示 -->
+                <div id="loadingState" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-[#18181b] z-10 rounded-2xl">
+                    <div id="carouselContainer" class="carousel-container mb-6" style="height: 300px;"></div>
                     <div class="text-center">
                         <div class="flex items-center justify-center space-x-3 mb-3">
                             <div class="loader"></div>
-                            <p class="text-blue-400 text-sm animate-pulse font-medium">正在设计提示词...</p>
+                            <p id="loadingText" class="text-blue-400 text-sm animate-pulse font-medium">正在生成...</p>
                         </div>
-                        <p class="text-gray-600 text-sm animate-fade-in" id="loadingStep">连接到神经网络</p>
+                        <p class="text-gray-600 text-xs" id="loadingStep">连接到神经网络</p>
                         <div class="mt-2 w-64 mx-auto">
                             <div class="w-full bg-gray-700/50 rounded-full h-1">
                                 <div class="bg-gradient-to-r from-blue-600 to-indigo-600 h-1 rounded-full transition-all duration-500" id="progressBar" style="width: 0%"></div>
                             </div>
                         </div>
-                        <p class="text-gray-500 text-xs mt-2">欣赏往期作品，耐心等待您的专属创作...</p>
+                        <p class="text-gray-500 text-xs mt-2">欣赏往期作品，耐心等待...</p>
                     </div>
                 </div>
 
-                <!-- 结果图片 -->
-                <img id="resultImage" class="hidden max-w-full max-h-[600px] rounded shadow-2xl border border-gray-800 object-contain" alt="Generated Art">
-                
-                <!-- 操作栏：只有下载按钮 -->
+                <!-- 下载按钮 -->
                 <div id="actionToolbar" class="hidden absolute bottom-4 right-4">
-                    <!-- 下载按钮 - 改为普通按钮，移除target="_blank" -->
                     <button id="downloadBtn" 
                         class="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white p-3 rounded-full transition download-btn flex items-center justify-center" 
                         title="下载图片">
@@ -268,92 +228,71 @@
                         </svg>
                     </button>
                 </div>
-            </div>
-        </div>
 
-        <!-- 第一步：风格选择（九宫格） - 新增区域 -->
-        <div class="px-6 md:px-8 pb-6 border-t border-gray-800">
-            <h2 class="text-lg font-semibold text-gray-300 mb-4 flex items-center">
-                <span class="text-2xl mr-3">🎨</span>
-                选择您喜欢的风格
-            </h2>
-            <div id="styleGrid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                <!-- 风格卡片将由JavaScript动态生成 -->
+                <!-- 占位符 -->
+                <div id="placeholder" class="text-center">
+                    <div class="inline-block p-4 rounded-full bg-gray-800/80 mb-4">
+                        <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                    <p class="text-gray-400 text-lg font-medium mb-2">您的作品将在这里显示</p>
+                    <p class="text-gray-600 text-sm">选择风格 → 输入关键词 → 点击生成</p>
+                </div>
             </div>
-        </div>
-
-        <!-- 说明文档 -->
-        <div class="px-6 md:px-8 py-6 bg-[#202023] border-t border-gray-800">
-            <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">使用指南</h3>
-            <ul class="text-xs text-gray-500 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                <li class="flex items-start">
-                    <span class="text-blue-400 mr-2">①</span>
-                    <span>点击风格卡片选择效果</span>
-                </li>
-                <li class="flex items-start">
-                    <span class="text-blue-400 mr-2">②</span>
-                    <span>输入框内填写具体内容</span>
-                </li>
-                <li class="flex items-start">
-                    <span class="text-blue-400 mr-2">③</span>
-                    <span>点击生成等待AI创作</span>
-                </li>
-                <li class="flex items-start">
-                    <span class="text-blue-400 mr-2">④</span>
-                    <span>下载保存您的作品</span>
-                </li>
-            </ul>
         </div>
     </div>
 
     <!-- 页脚 -->
-    <footer class="mt-8 text-center">
+    <footer class="mt-12 text-center">
         <a href="https://github.com/keenturbo/AI-Chalkboard-Art" target="_blank" class="text-gray-600 text-xs hover:text-gray-400 transition flex items-center justify-center space-x-1">
-            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"></path></svg>
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"></path>
+            </svg>
             <span>Open Source on GitHub</span>
         </a>
     </footer>
 
-    <!-- 额度耗尽弹窗 (Modal) -->
-    <div id="limitModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-custom p-4">
-        <div class="bg-[#18181b] border border-gray-700 rounded-2xl shadow-2xl max-w-md w-full p-8 text-center transform transition-all scale-100 relative">
-            <!-- 关闭按钮 (可选，防止卡死) -->
+    <!-- 额度耗尽弹窗 -->
+    <div id="limitModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+        <div class="bg-[#18181b] border border-gray-700 rounded-2xl shadow-2xl max-w-md w-full p-8 text-center relative">
             <button onclick="closeLimitModal()" class="absolute top-4 right-4 text-gray-500 hover:text-white">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
             </button>
-
             <div class="mb-6">
                 <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-900/30 text-blue-400 mb-4">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
                 </div>
                 <h2 class="text-2xl font-bold text-white mb-2">今日灵感已耗尽</h2>
-                <p class="text-gray-400 text-sm">为了保证服务稳定，每天限制免费生成 3 次。<br>明天会自动重置额度哦！</p>
+                <p class="text-gray-400 text-sm">每天限制免费生成 3 次，明天自动重置。</p>
             </div>
-
             <div class="space-y-4">
-                <!-- 选项A: 硬核部署 -->
                 <a href="https://github.com/keenturbo/AI-Chalkboard-Art" target="_blank" class="block w-full bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white font-medium py-3 px-4 rounded-lg transition flex items-center justify-center space-x-2">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"></path></svg>
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"></path>
+                    </svg>
                     <span>在 GitHub 上免费部署同款</span>
                 </a>
-
-                <!-- 选项B: 打赏支持 (展开逻辑) -->
-                <div class="relative">
-                    <button onclick="toggleDonate()" class="block w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium py-3 px-4 rounded-lg transition flex items-center justify-center space-x-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                        <span>请作者喝杯咖啡 (支持开发)</span>
-                    </button>
-                    <!-- 隐藏的二维码区域 -->
-                    <div id="donateArea" class="hidden mt-4 p-4 bg-white rounded-lg animate-fade-in">
-                        <img src="https://pic.turbo.netlib.re/generated/IMG_4859.jpeg" alt="赞赏码" class="w-48 h-48 object-contain mx-auto">
-                        <p class="text-gray-800 text-xs mt-2 font-medium">微信扫码，请我喝咖啡</p>
-                    </div>
+                <button onclick="toggleDonate()" class="block w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium py-3 px-4 rounded-lg transition flex items-center justify-center space-x-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                    <span>请作者喝杯咖啡</span>
+                </button>
+                <div id="donateArea" class="hidden mt-4 p-4 bg-white rounded-lg">
+                    <img src="https://pic.turbo.netlib.re/generated/IMG_4859.jpeg" alt="赞赏码" class="w-48 h-48 object-contain mx-auto">
+                    <p class="text-gray-800 text-xs mt-2 font-medium">微信扫码</p>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
+        // === 全局变量 ===
         const form = document.getElementById('artForm');
         const generateBtn = document.getElementById('generateBtn');
         const placeholder = document.getElementById('placeholder');
@@ -369,22 +308,16 @@
         const carouselContainer = document.getElementById('carouselContainer');
         const progressBar = document.getElementById('progressBar');
         const styleGrid = document.getElementById('styleGrid');
-        const inputLabel = document.getElementById('inputLabel');
-        const inputHint = document.getElementById('inputHint');
-        const currentStyleEmoji = document.getElementById('currentStyleEmoji');
-        const currentStyleText = document.getElementById('currentStyleText');
-        const selectedStyle = document.getElementById('selectedStyle');
-        const styleCount = document.getElementById('styleCount');
 
         const MAX_DAILY_LIMIT = 3;
 
-        // === 动态加载配置 ===
+        // === 配置数据 ===
         let SITE_CONFIG = {
             gallery_images: [],
             prompts: []
         };
 
-        // 从API加载配置
+        // === 加载配置 ===
         async function loadSiteConfig() {
             try {
                 const response = await fetch('/api/admin-config');
@@ -392,96 +325,26 @@
                     const config = await response.json();
                     SITE_CONFIG = config;
                     updateStyleGrid();
+                    document.getElementById('styleCount').textContent = config.prompts.length;
                     console.log('已加载管理员配置');
                 }
             } catch (error) {
                 console.error('加载配置失败，使用默认配置:', error);
                 // 使用默认配置
                 SITE_CONFIG = {
-                    gallery_images: [
-                        'https://pic.icon.pp.ua/generated/IMG_4837.jpeg',
-                        'https://pic.icon.pp.ua/generated/IMG_4839.jpeg',
-                        'https://pic.icon.pp.ua/generated/IMG_4840.jpeg',
-                        'https://pic.icon.pp.ua/generated/IMG_4841.jpeg',
-                        'https://pic.icon.pp.ua/generated/IMG_4848.jpeg',
-                        'https://pic.icon.pp.ua/generated/IMG_4849.jpeg',
-                        'https://pic.icon.pp.ua/generated/IMG_4853.jpeg',
-                        'https://pic.icon.pp.ua/generated/IMG_4855.jpeg',
-                        'https://pic.icon.pp.ua/generated/IMG_4856.jpeg',
-                        'https://pic.icon.pp.ua/generated/IMG_4857.jpeg',
-                        'https://pic.icon.pp.ua/generated/IMG_4860.jpeg',
-                        'https://pic.icon.pp.ua/generated/IMG_4863.jpeg',
-                        'https://pic.icon.pp.ua/generated/IMG_4865.jpeg',
-                        'https://pic.icon.pp.ua/generated/IMG_4867.jpeg',
-                        'https://pic.icon.pp.ua/generated/IMG_4869.jpeg',
-                        'https://pic.icon.pp.ua/generated/IMG_4870.jpeg',
-                        'https://pic.icon.pp.ua/generated/IMG_4871.jpeg',
-                        'https://pic.icon.pp.ua/generated/IMG_4872.jpeg',
-                        'https://pic.icon.pp.ua/generated/IMG_4874.jpeg',
-                        'https://pic.icon.pp.ua/generated/IMG_4875.jpeg'
-                    ],
+                    gallery_images: [],
                     prompts: [
-                        { 
-                            name: '黑板粉笔画', 
-                            key: 'blackboard', 
-                            prompt: '',
-                            input_label: '动漫角色名称',
-                            input_placeholder: '例如：疯狂动物城、海绵宝宝、哪吒',
-                            input_hint: '输入动漫角色或卡通人物名称，AI 将绘制黑板粉笔画风格作品'
-                        }
+                        { key: 'blackboard', name: '黑板粉笔画' }
                     ]
                 };
                 updateStyleGrid();
             }
         }
 
-        // === 获取对应风格的图片 ===
-        function getStyleImages(styleKey) {
-            // R2存储的图片命名规则：ai-chalkboard-{character}-{style}.png
-            return SITE_CONFIG.gallery_images.filter(url => {
-                // 从URL中提取文件名
-                const filename = url.split('/').pop();
-                return filename.includes(`-${styleKey}.png`);
-            });
-        }
-
-        // === 获取走马灯图片（按风格区分） ===
-        function getCarouselImages(styleKey, includeLatest = false) {
-            let images = [];
-            
-            // 优先获取对应风格的图片
-            const styleImages = getStyleImages(styleKey);
-            
-            if (includeLatest) {
-                // 获取用户最近生成的作品（最多3张）
-                const recentWorks = JSON.parse(sessionStorage.getItem('recentWorks') || '[]');
-                // 过滤出对应风格的最新作品
-                const styleRecentWorks = recentWorks.filter(url => {
-                    const filename = url.split('/').pop();
-                    return filename.includes(`-${styleKey}.png`);
-                });
-                images = [...styleRecentWorks];
-            }
-            
-            // 添加该风格的历史作品
-            const otherStyleImages = styleImages.filter(img => !images.includes(img));
-            images = [...images, ...otherStyleImages];
-            
-            // 如果该风格图片不足5张，补充其他风格图片
-            if (images.length < 5) {
-                const allImages = SITE_CONFIG.gallery_images.filter(url => !images.includes(url));
-                const needed = 5 - images.length;
-                images = images.concat(allImages.slice(0, needed));
-            }
-            
-            return images.slice(0, 8); // 最多展示8张
-        }
-
-        // 更新九宫格风格选择
+        // === 更新风格网格 ===
         function updateStyleGrid() {
             styleGrid.innerHTML = '';
             
-            // 添加对应的emoji映射
             const emojiMap = {
                 'blackboard': '🏫',
                 'cloud': '☁️',
@@ -493,35 +356,24 @@
                 'fly': '🎆',
                 'brand_miniature': '🏬'
             };
-            
-            // 默认缩略图 - 使用对应风格的图片
-            const defaultThumbnails = {};
-            const styleKeys = ['blackboard', 'cloud', 'textbook', 'zombie', 'punk', 'Cyber', 'star', 'fly', 'brand_miniature'];
-            styleKeys.forEach(key => {
-                const styleImages = getStyleImages(key);
-                if (styleImages.length > 0) {
-                    // 使用该风格的第一张图片作为缩略图
-                    defaultThumbnails[key] = styleImages[0];
-                } else {
-                    // 如果没有对应风格的图片，使用通用缩略图
-                    const fallbackThumbnails = {
-                        'blackboard': 'https://pic.icon.pp.ua/generated/IMG_4874.jpeg',
-                        'cloud': 'https://pic.icon.pp.ua/generated/IMG_4837.jpeg',
-                        'textbook': 'https://pic.icon.pp.ua/generated/IMG_4840.jpeg',
-                        'zombie': 'https://pic.icon.pp.ua/generated/IMG_4841.jpeg',
-                        'punk': 'https://pic.icon.pp.ua/generated/IMG_4848.jpeg',
-                        'Cyber': 'https://pic.icon.pp.ua/generated/IMG_4849.jpeg',
-                        'star': 'https://pic.icon.pp.ua/generated/IMG_4853.jpeg',
-                        'fly': 'https://pic.icon.pp.ua/generated/IMG_4855.jpeg',
-                        'brand_miniature': 'https://pic.icon.pp.ua/generated/IMG_4973.jpeg'
-                    };
-                    defaultThumbnails[key] = fallbackThumbnails[key] || 'https://pic.icon.pp.ua/generated/IMG_4837.jpeg';
-                }
-            });
-            
+
+            // 为每个风格设置默认缩略图
+            const fallbackThumbnails = {
+                'blackboard': 'https://pic.icon.pp.ua/generated/IMG_4874.jpeg',
+                'cloud': 'https://pic.icon.pp.ua/generated/IMG_4837.jpeg',
+                'textbook': 'https://pic.icon.pp.ua/generated/IMG_4840.jpeg',
+                'zombie': 'https://pic.icon.pp.ua/generated/IMG_4841.jpeg',
+                'punk': 'https://pic.icon.pp.ua/generated/IMG_4848.jpeg',
+                'Cyber': 'https://pic.icon.pp.ua/generated/IMG_4849.jpeg',
+                'star': 'https://pic.icon.pp.ua/generated/IMG_4853.jpeg',
+                'fly': 'https://pic.icon.pp.ua/generated/IMG_4855.jpeg',
+                'brand_miniature': 'https://pic.icon.pp.ua/generated/IMG_4973.jpeg'
+            };
+
             SITE_CONFIG.prompts.forEach(prompt => {
                 const emoji = emojiMap[prompt.key] || '🎨';
-                const thumbnail = prompt.thumbnail || defaultThumbnails[prompt.key] || 'https://pic.icon.pp.ua/generated/IMG_4837.jpeg';
+                // 优先使用KV中的thumbnail_url，否则使用fallback
+                const thumbnail = prompt.thumbnail_url || fallbackThumbnails[prompt.key] || fallbackThumbnails['blackboard'];
                 
                 const card = document.createElement('div');
                 card.className = `style-card p-3 bg-gray-800 rounded-lg cursor-pointer ${prompt.key === 'blackboard' ? 'selected' : ''}`;
@@ -530,30 +382,27 @@
                     <div class="relative">
                         <img src="${thumbnail}" alt="${prompt.name}" class="thumbnail rounded-lg mb-2">
                         <div class="text-center">
-                            <p class="text-white text-sm font-medium">${emoji} ${prompt.name}</p>
+                            <p class="text-white text-sm font-medium truncate">${emoji} ${prompt.name}</p>
                         </div>
                     </div>
                 `;
                 
-                // 点击事件
                 card.addEventListener('click', () => selectStyle(prompt.key));
-                
                 styleGrid.appendChild(card);
             });
-            
-            // 更新风格计数
-            styleCount.textContent = SITE_CONFIG.prompts.length;
-            
-            // 默认选中黑板粉笔画
-            selectStyle('blackboard');
+
+            // 默认选中第一个风格
+            if (SITE_CONFIG.prompts.length > 0) {
+                selectStyle(SITE_CONFIG.prompts[0].key);
+            }
         }
 
-        // 选择风格
+        // === 选择风格 ===
         function selectStyle(styleKey) {
             const prompt = SITE_CONFIG.prompts.find(p => p.key === styleKey);
             if (!prompt) return;
             
-            // 更新所有卡片的选中状态
+            // 更新选中状态
             document.querySelectorAll('.style-card').forEach(card => {
                 if (card.dataset.key === styleKey) {
                     card.classList.add('selected');
@@ -562,30 +411,17 @@
                 }
             });
             
-            // 更新隐藏的style值
-            selectedStyle.value = styleKey;
+            // 更新隐藏值
+            document.getElementById('selectedStyle').value = styleKey;
             
-            // 更新输入框标签和文字
-            if (prompt.input_label) {
-                inputLabel.textContent = prompt.input_label;
-            } else {
-                inputLabel.textContent = '角色名称';
-            }
+            // 更新输入框标签
+            document.getElementById('inputLabel').textContent = prompt.input_label || '输入内容';
             
             // 更新占位符
-            const characterInput = document.getElementById('character');
-            if (prompt.input_placeholder) {
-                characterInput.placeholder = prompt.input_placeholder;
-            } else {
-                characterInput.placeholder = '请输入内容';
-            }
+            document.getElementById('character').placeholder = prompt.input_placeholder || '请输入内容';
             
             // 更新提示文字
-            if (prompt.input_hint) {
-                inputHint.textContent = prompt.input_hint;
-            } else {
-                inputHint.textContent = '输入内容，AI 将为您创作艺术作品。';
-            }
+            document.getElementById('inputHint').textContent = prompt.input_hint || '输入内容，AI 将为您创作艺术作品';
             
             // 更新当前风格显示
             const emojiMap = {
@@ -599,44 +435,31 @@
                 'fly': '🎆',
                 'brand_miniature': '🏬'
             };
-            
-            currentStyleEmoji.textContent = emojiMap[styleKey] || '🎨';
-            currentStyleText.textContent = prompt.name || styleKey;
+            document.getElementById('currentStyleEmoji').textContent = emojiMap[styleKey] || '🎨';
+            document.getElementById('currentStyleText').textContent = prompt.name || styleKey;
         }
 
-        // === 轮播管理器：按风格展示 ===
+        // === 轮播管理器 ===
         class StyleCarouselManager {
             constructor() {
                 this.currentIndex = 0;
                 this.pool = [];
-                this.preloadedImages = new Map();
                 this.scheduleInterval = null;
                 this.isRunning = false;
-                this.currentStyle = 'blackboard';
             }
 
-            startCarousel(styleKey, stopTime) {
-                this.currentStyle = styleKey;
-                
-                // 检查是否为第二次及以上生成，包含最新作品
-                const usageCount = getDailyUsage();
-                this.pool = getCarouselImages(styleKey, usageCount > 0);
-                
+            startCarousel(stopTime) {
                 this.stopCarousel();
                 this.isRunning = true;
                 
-                // 如果池为空，使用通用图片
-                if (this.pool.length === 0) {
-                    this.pool = SITE_CONFIG.gallery_images.slice(0, 8);
-                }
+                // 使用gallery_images作为轮播池
+                this.pool = SITE_CONFIG.gallery_images.length > 0 ? 
+                    SITE_CONFIG.gallery_images.slice(0, 8) : 
+                    ['https://pic.icon.pp.ua/generated/IMG_4874.jpeg'];
                 
-                // 初始化轮播容器
                 this.initCarouselContainer();
-                
-                // 立即显示第一张图片
                 this.showImage(0);
                 
-                // 每4秒切换一张图片
                 this.scheduleInterval = setInterval(() => {
                     if (!this.isRunning || Date.now() >= stopTime) {
                         this.stopCarousel();
@@ -645,11 +468,10 @@
                     
                     this.currentIndex = (this.currentIndex + 1) % this.pool.length;
                     this.showImage(this.currentIndex);
-                }, 4000); // 4秒间隔：3.5秒展示 + 0.5秒过渡
+                }, 4000);
             }
 
             initCarouselContainer() {
-                // 创建单个img元素用于轮播
                 const img = document.createElement('img');
                 img.className = 'carousel-image active';
                 img.alt = '作品展示';
@@ -671,14 +493,10 @@
                 
                 if (!img) return;
                 
-                // 重试逻辑
                 img.onerror = () => {
                     console.error(`轮播图片加载失败: ${imgSrc}`);
-                    // 使用第一张可用图片作为fallback
                     if (this.pool.length > 0 && index !== 0) {
                         img.src = this.pool[0];
-                    } else {
-                        img.src = SITE_CONFIG.gallery_images[0] || 'https://pic.icon.pp.ua/generated/IMG_4837.jpeg';
                     }
                 };
                 
@@ -686,15 +504,13 @@
             }
         }
 
-        // 实例化轮播管理器
         const carouselManager = new StyleCarouselManager();
 
-        // === 下载图片函数：使用 fetch + blob 方式 ===
+        // === 下载函数 ===
         async function downloadImage(url, filename) {
             try {
                 console.log('开始下载图片:', url);
                 
-                // 使用 fetch 获取图片数据
                 const response = await fetch(url, {
                     mode: 'cors',
                     credentials: 'omit'
@@ -704,41 +520,32 @@
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
                 
-                // 转换为 blob
                 const blob = await response.blob();
-                
-                // 创建下载链接
                 const downloadUrl = URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.href = downloadUrl;
                 link.download = filename;
                 
-                // 触发下载
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
                 
-                // 清理资源
                 URL.revokeObjectURL(downloadUrl);
-                
                 console.log('图片下载成功:', filename);
                 
             } catch (error) {
                 console.error('下载失败:', error);
                 showStatus('下载失败，正在打开新窗口...', 'error');
-                
-                // 降级方案：直接打开新窗口
                 window.open(url, '_blank');
             }
         }
 
         // === 每日限额逻辑 ===
         function getDailyUsage() {
-            const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+            const today = new Date().toISOString().split('T')[0];
             const storedDate = localStorage.getItem('last_usage_date');
             
             if (storedDate !== today) {
-                // 新的一天，重置
                 localStorage.setItem('last_usage_date', today);
                 localStorage.setItem('daily_count', '0');
                 return 0;
@@ -776,53 +583,61 @@
             donateArea.classList.toggle('hidden');
         }
 
-        // === 原有逻辑 ===
-        function updateLoadingSteps(style) {
-            if (style === 'cloud') {
-                return ["分析云彩形态...", "调用 Gemini 模型...", "渲染天空光影...", "保存到 R2 存储...", "完成处理..."];
-            } else if (style === 'textbook') {
-                return ["打开课本页面...", "调用 Gemini 模型...", "绘制铅笔涂鸦...", "添加纸张质感...", "完成处理..."];
+        function showStatus(msg, type = 'info') {
+            if (!msg) {
+                statusMessage.classList.add('hidden');
+                return;
+            }
+            statusMessage.textContent = msg;
+            statusMessage.className = `text-center text-sm p-3 rounded ${type === 'error' ? 'bg-red-900/50 text-red-200 border border-red-800' : 'bg-gray-800 text-gray-300'}`;
+            statusMessage.classList.remove('hidden');
+        }
+
+        function setLoading(isLoading) {
+            if (isLoading) {
+                generateBtn.disabled = true;
+                generateBtn.innerHTML = '<div class="loader border-t-white w-4 h-4 mr-2"></div> 正在生成...';
+                loadingState.classList.remove('hidden');
+                resultImage.classList.add('hidden');
+                actionToolbar.classList.add('hidden');
+                placeholder.classList.add('hidden');
+                progressBar.style.width = '0%';
             } else {
-                return ["生成提示词中...", "调用 Gemini 模型...", "渲染粉笔纹理...", "保存到 R2 存储...", "完成处理..."];
+                generateBtn.disabled = false;
+                generateBtn.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg><span>生成作品</span>';
+                loadingState.classList.add('hidden');
             }
         }
 
+        // === 表单提交 ===
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            // 1. 检查额度
             if (getDailyUsage() >= MAX_DAILY_LIMIT) {
                 showLimitModal();
                 return;
             }
             
-            // 2. UI Reset
             const character = document.getElementById('character').value.trim();
-            const style = selectedStyle.value;
+            const style = document.getElementById('selectedStyle').value;
             if (!character) return;
 
             setLoading(true);
             showStatus(null);
             
-            // 计算停止时间（平均24秒 + 缓冲6秒）
-            const stopTime = Date.now() + 30000; // 30秒后停止
+            const stopTime = Date.now() + 30000;
+            carouselManager.startCarousel(stopTime);
             
-            // 启动对应风格的静态轮播
-            carouselManager.startCarousel(style, stopTime);
-            
-            const steps = updateLoadingSteps(style);
+            const steps = ["生成提示词中...", "调用 Gemini 模型...", "渲染生成中...", "保存到存储...", "完成处理..."];
             let stepIndex = 0;
             const stepInterval = setInterval(() => {
                 if (stepIndex < steps.length) {
-                    const step = steps[stepIndex++];
-                    loadingStep.textContent = step;
-                    // 更新进度条
+                    loadingStep.textContent = steps[stepIndex++];
                     progressBar.style.width = `${(stepIndex / steps.length) * 100}%`;
                 }
             }, 1500);
 
             try {
-                // 添加调试：记录请求参数
                 console.log('开始生成图片请求:', { character, style });
                 
                 const response = await fetch('/api/generate', {
@@ -834,7 +649,6 @@
                     })
                 });
 
-                // 添加调试：检查响应状态
                 console.log('收到API响应:', response.status, response.statusText);
                 
                 if (!response.ok) {
@@ -846,27 +660,20 @@
                 const data = await response.json();
                 console.log('API响应数据:', data);
 
-                // 添加超时机制：30秒超时
                 const timeout = setTimeout(() => {
                     console.error('请求超时:', { url: '/api/generate', character, style });
                 }, 30000);
 
                 if (data.image_url) {
                     clearTimeout(timeout);
-                    
-                    // 3. 成功生成，扣除额度
                     incrementUsage();
 
-                    // 添加调试：监控图片加载
-                    console.log('开始加载生成图片:', data.image_url);
-                    
                     const img = new Image();
                     img.onload = () => {
                         console.log('生成图片加载成功:', data.image_url);
                     };
                     img.onerror = (error) => {
                         console.error('生成图片加载失败:', error, data.image_url);
-                        // 重试逻辑
                         setTimeout(() => {
                             console.log('重试加载:', data.image_url);
                             const retryImg = new Image();
@@ -877,16 +684,8 @@
                     };
                     img.src = data.image_url;
 
-                    // 缓存最新作品到sessionStorage，供走马灯使用
-                    const recentWorks = JSON.parse(sessionStorage.getItem('recentWorks') || '[]');
-                    if (!recentWorks.includes(data.image_url)) {
-                        recentWorks.unshift(data.image_url);
-                        sessionStorage.setItem('recentWorks', JSON.stringify(recentWorks.slice(0, 3)));
-                    }
-
                     resultImage.src = data.image_url;
                     
-                    // 设置下载按钮点击事件
                     downloadBtn.onclick = () => {
                         const filename = `ai-chalkboard-${character.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '-')}-${style}.png`;
                         downloadImage(data.image_url, filename);
@@ -921,58 +720,25 @@
             }
         });
 
-        function setLoading(isLoading) {
-            if (isLoading) {
-                generateBtn.disabled = true;
-                generateBtn.innerHTML = '<div class="loader border-t-white w-4 h-4 mr-2"></div> 正在生成...';
-                loadingState.classList.remove('hidden');
-                resultImage.classList.add('hidden');
-                actionToolbar.classList.add('hidden');
-                placeholder.classList.add('hidden');
-                // 重置进度条
-                progressBar.style.width = '0%';
-            } else {
-                generateBtn.disabled = false;
-                generateBtn.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg><span>生成作品</span>';
-                loadingState.classList.add('hidden');
-            }
+        // === 初始化 ===
+        function initializeApp() {
+            updateCounterUI();
+            loadSiteConfig();
         }
-
-        function showStatus(msg, type = 'info') {
-            if (!msg) {
-                statusMessage.classList.add('hidden');
-                return;
-            }
-            statusMessage.textContent = msg;
-            statusMessage.className = `text-center text-sm p-3 rounded ${type === 'error' ? 'bg-red-900/50 text-red-200 border border-red-800' : 'bg-gray-800 text-gray-300'}`;
-            statusMessage.classList.remove('hidden');
-        }
-
-        // 初始化
-        updateCounterUI();
 
         // 添加键盘快捷键支持
         document.addEventListener('keydown', function(e) {
-            // Ctrl+Enter 或 Cmd+Enter 提交表单
             if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
                 e.preventDefault();
                 form.dispatchEvent(new Event('submit'));
             }
-            // ESC 关闭弹窗
             if (e.key === 'Escape') {
                 closeLimitModal();
             }
         });
 
-        // 添加页面加载动画
-        window.addEventListener('load', function() {
-            document.querySelector('.fade-in')?.classList.add('fade-in');
-        });
-
-        // 页面加载时初始化配置
-        window.addEventListener('DOMContentLoaded', function() {
-            loadSiteConfig();
-        });
+        // 页面加载时初始化
+        window.addEventListener('DOMContentLoaded', initializeApp);
     </script>
 </body>
 </html>
