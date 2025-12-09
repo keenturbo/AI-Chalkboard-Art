@@ -150,9 +150,9 @@
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4 relative">
 
-    <!-- 右上角管理入口 -->
+    <!-- 右上角管理入口 - 只显示齿轮 -->
     <div class="fixed top-4 right-4 z-50">
-        <a href="/admin.html" class="text-gray-500 hover:text-gray-300 transition p-2 rounded-full hover:bg-gray-800/50">
+        <a href="/admin.html" class="text-gray-500 hover:text-gray-300 transition p-2 rounded-full hover:bg-gray-800/50" title="管理后台">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -435,6 +435,48 @@
             }
         }
 
+        // === 获取对应风格的图片 ===
+        function getStyleImages(styleKey) {
+            // R2存储的图片命名规则：ai-chalkboard-{character}-{style}.png
+            return SITE_CONFIG.gallery_images.filter(url => {
+                // 从URL中提取文件名
+                const filename = url.split('/').pop();
+                return filename.includes(`-${styleKey}.png`);
+            });
+        }
+
+        // === 获取走马灯图片（按风格区分） ===
+        function getCarouselImages(styleKey, includeLatest = false) {
+            let images = [];
+            
+            // 优先获取对应风格的图片
+            const styleImages = getStyleImages(styleKey);
+            
+            if (includeLatest) {
+                // 获取用户最近生成的作品（最多3张）
+                const recentWorks = JSON.parse(sessionStorage.getItem('recentWorks') || '[]');
+                // 过滤出对应风格的最新作品
+                const styleRecentWorks = recentWorks.filter(url => {
+                    const filename = url.split('/').pop();
+                    return filename.includes(`-${styleKey}.png`);
+                });
+                images = [...styleRecentWorks];
+            }
+            
+            // 添加该风格的历史作品
+            const otherStyleImages = styleImages.filter(img => !images.includes(img));
+            images = [...images, ...otherStyleImages];
+            
+            // 如果该风格图片不足5张，补充其他风格图片
+            if (images.length < 5) {
+                const allImages = SITE_CONFIG.gallery_images.filter(url => !images.includes(url));
+                const needed = 5 - images.length;
+                images = images.concat(allImages.slice(0, needed));
+            }
+            
+            return images.slice(0, 8); // 最多展示8张
+        }
+
         // 更新九宫格风格选择
         function updateStyleGrid() {
             styleGrid.innerHTML = '';
@@ -452,18 +494,30 @@
                 'brand_miniature': '🏬'
             };
             
-            // 默认缩略图
-            const defaultThumbnails = {
-                'blackboard': 'https://pic.icon.pp.ua/generated/IMG_4874.jpeg',
-                'cloud': 'https://pic.icon.pp.ua/generated/IMG_4837.jpeg',
-                'textbook': 'https://pic.icon.pp.ua/generated/IMG_4840.jpeg',
-                'zombie': 'https://pic.icon.pp.ua/generated/IMG_4841.jpeg',
-                'punk': 'https://pic.icon.pp.ua/generated/IMG_4848.jpeg',
-                'Cyber': 'https://pic.icon.pp.ua/generated/IMG_4849.jpeg',
-                'star': 'https://pic.icon.pp.ua/generated/IMG_4853.jpeg',
-                'fly': 'https://pic.icon.pp.ua/generated/IMG_4855.jpeg',
-                'brand_miniature': 'https://pic.icon.pp.ua/generated/IMG_4973.jpeg'
-            };
+            // 默认缩略图 - 使用对应风格的图片
+            const defaultThumbnails = {};
+            const styleKeys = ['blackboard', 'cloud', 'textbook', 'zombie', 'punk', 'Cyber', 'star', 'fly', 'brand_miniature'];
+            styleKeys.forEach(key => {
+                const styleImages = getStyleImages(key);
+                if (styleImages.length > 0) {
+                    // 使用该风格的第一张图片作为缩略图
+                    defaultThumbnails[key] = styleImages[0];
+                } else {
+                    // 如果没有对应风格的图片，使用通用缩略图
+                    const fallbackThumbnails = {
+                        'blackboard': 'https://pic.icon.pp.ua/generated/IMG_4874.jpeg',
+                        'cloud': 'https://pic.icon.pp.ua/generated/IMG_4837.jpeg',
+                        'textbook': 'https://pic.icon.pp.ua/generated/IMG_4840.jpeg',
+                        'zombie': 'https://pic.icon.pp.ua/generated/IMG_4841.jpeg',
+                        'punk': 'https://pic.icon.pp.ua/generated/IMG_4848.jpeg',
+                        'Cyber': 'https://pic.icon.pp.ua/generated/IMG_4849.jpeg',
+                        'star': 'https://pic.icon.pp.ua/generated/IMG_4853.jpeg',
+                        'fly': 'https://pic.icon.pp.ua/generated/IMG_4855.jpeg',
+                        'brand_miniature': 'https://pic.icon.pp.ua/generated/IMG_4973.jpeg'
+                    };
+                    defaultThumbnails[key] = fallbackThumbnails[key] || 'https://pic.icon.pp.ua/generated/IMG_4837.jpeg';
+                }
+            });
             
             SITE_CONFIG.prompts.forEach(prompt => {
                 const emoji = emojiMap[prompt.key] || '🎨';
@@ -550,23 +604,31 @@
             currentStyleText.textContent = prompt.name || styleKey;
         }
 
-        // === 轮播管理器：静态展示 + 预加载系统 ===
-        class CarouselManager {
+        // === 轮播管理器：按风格展示 ===
+        class StyleCarouselManager {
             constructor() {
                 this.currentIndex = 0;
                 this.pool = [];
                 this.preloadedImages = new Map();
                 this.scheduleInterval = null;
                 this.isRunning = false;
+                this.currentStyle = 'blackboard';
             }
 
-            startCarousel(stopTime) {
+            startCarousel(styleKey, stopTime) {
+                this.currentStyle = styleKey;
+                
                 // 检查是否为第二次及以上生成，包含最新作品
                 const usageCount = getDailyUsage();
-                this.pool = getCarouselImages(usageCount > 0);
+                this.pool = getCarouselImages(styleKey, usageCount > 0);
                 
                 this.stopCarousel();
                 this.isRunning = true;
+                
+                // 如果池为空，使用通用图片
+                if (this.pool.length === 0) {
+                    this.pool = SITE_CONFIG.gallery_images.slice(0, 8);
+                }
                 
                 // 初始化轮播容器
                 this.initCarouselContainer();
@@ -612,7 +674,12 @@
                 // 重试逻辑
                 img.onerror = () => {
                     console.error(`轮播图片加载失败: ${imgSrc}`);
-                    img.src = SITE_CONFIG.gallery_images[0] || 'https://pic.icon.pp.ua/generated/IMG_4837.jpeg';
+                    // 使用第一张可用图片作为fallback
+                    if (this.pool.length > 0 && index !== 0) {
+                        img.src = this.pool[0];
+                    } else {
+                        img.src = SITE_CONFIG.gallery_images[0] || 'https://pic.icon.pp.ua/generated/IMG_4837.jpeg';
+                    }
                 };
                 
                 img.src = imgSrc;
@@ -620,31 +687,7 @@
         }
 
         // 实例化轮播管理器
-        const carouselManager = new CarouselManager();
-
-        // === 获取走马灯图片列表 ===
-        function getCarouselImages(includeLatest = false) {
-            let images = [];
-            const GALLERY_POOL = SITE_CONFIG.gallery_images;
-            
-            if (includeLatest) {
-                // 获取用户最近生成的作品（最多3张）
-                const recentWorks = JSON.parse(sessionStorage.getItem('recentWorks') || '[]');
-                images = [...recentWorks];
-            }
-            
-            // 从精选池中随机选择剩余的图片，凑够30张
-            const pool = GALLERY_POOL.filter(img => !images.includes(img)); // 去重
-            const needed = 30 - images.length;
-            
-            if (needed > 0) {
-                // 随机打乱池并取前needed张
-                const shuffled = [...pool].sort(() => Math.random() - 0.5);
-                images = images.concat(shuffled.slice(0, needed));
-            }
-            
-            return images.slice(0, 30); // 确保最多30张
-        }
+        const carouselManager = new StyleCarouselManager();
 
         // === 下载图片函数：使用 fetch + blob 方式 ===
         async function downloadImage(url, filename) {
@@ -659,9 +702,6 @@
                 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                
-                // 转换为 blob
                 }
                 
                 // 转换为 blob
@@ -767,8 +807,8 @@
             // 计算停止时间（平均24秒 + 缓冲6秒）
             const stopTime = Date.now() + 30000; // 30秒后停止
             
-            // 启动静态轮播
-            carouselManager.startCarousel(stopTime);
+            // 启动对应风格的静态轮播
+            carouselManager.startCarousel(style, stopTime);
             
             const steps = updateLoadingSteps(style);
             let stepIndex = 0;
@@ -846,7 +886,7 @@
 
                     resultImage.src = data.image_url;
                     
-                    // 设置下载按钮点击事件，修复文件后缀问题 - 删除了.jpg硬编码
+                    // 设置下载按钮点击事件
                     downloadBtn.onclick = () => {
                         const filename = `ai-chalkboard-${character.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '-')}-${style}.png`;
                         downloadImage(data.image_url, filename);
