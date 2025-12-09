@@ -87,6 +87,19 @@
         .status-warning { background-color: #f59e0b; }
         .status-failed { background-color: #ef4444; }
         .status-disabled { background-color: #6b7280; }
+        /* 缩略图预览 */
+        .thumbnail-preview {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 2px solid #374151;
+        }
+        /* 提示词编辑区域 */
+        .edit-mode {
+            border-left: 3px solid #3b82f6;
+            background: rgba(59, 130, 246, 0.1);
+        }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4 relative">
@@ -363,8 +376,8 @@
                                     </button>
                                 </div>
                                 
-                                <!-- 新增的三个字段 -->
-                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <!-- 新增的四个字段 -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label for="promptInputLabel" class="block text-sm font-medium text-gray-300 mb-1">输入框标签</label>
                                         <input type="text" id="promptInputLabel" placeholder="如: 动漫角色名称" 
@@ -375,9 +388,17 @@
                                         <input type="text" id="promptInputPlaceholder" placeholder="如: 哪吒之魔童降世、疯狂动物城" 
                                             class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
                                     </div>
+                                </div>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label for="promptInputHint" class="block text-sm font-medium text-gray-300 mb-1">使用说明</label>
                                         <input type="text" id="promptInputHint" placeholder="给用户的输入提示说明" 
+                                            class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                    <div>
+                                        <label for="promptThumbnailUrl" class="block text-sm font-medium text-gray-300 mb-1">缩略图 URL</label>
+                                        <input type="url" id="promptThumbnailUrl" placeholder="风格缩略图链接 (可选)" 
                                             class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
                                     </div>
                                 </div>
@@ -397,9 +418,15 @@
 
                         <div class="mt-4 p-4 bg-blue-900/20 rounded-lg border border-blue-800/50">
                             <p class="text-blue-300 text-sm">
-                                💡 新增提示词会自动同步到前端选择菜单，支持完整的自定义提示词内容。
-                                <br>新增的三个字段会动态更新前端输入框的标签、占位符和使用说明。
+                                💡 <strong>新增提示词管理说明：</strong>
                             </p>
+                            <ul class="text-blue-300 text-sm mt-2 space-y-1">
+                                <li>• 新增提示词会自动同步到前端选择菜单</li>
+                                <li>• 四个新增字段（标签、占位符、说明、缩略图）会影响前端体验</li>
+                                <li>• 缩略图将用于首页九宫格展示，建议尺寸为 1:1 或 2:3</li>
+                                <li>• 提示词支持完整的自定义内容，留空则使用内置模板</li>
+                                <li>• 点击"编辑"按钮可以修改所有字段内容</li>
+                            </ul>
                         </div>
                     </div>
                 </div>
@@ -483,6 +510,62 @@
 
     <!-- 状态提示 -->
     <div id="statusMessage" class="hidden fixed top-4 right-4 z-50 p-4 rounded-lg border shadow-lg fade-in"></div>
+
+    <!-- 提示词编辑模态框 -->
+    <div id="promptEditModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+        <div class="bg-[#18181b] border border-gray-800 rounded-xl p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <h3 class="text-lg font-semibold text-white mb-4">编辑提示词配置</h3>
+            
+            <div class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1">提示词名称</label>
+                        <input type="text" id="editPromptName" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1">提示词键值</label>
+                        <input type="text" id="editPromptKey" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white">
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1">输入框标签</label>
+                        <input type="text" id="editPromptInputLabel" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1">占位符示例</label>
+                        <input type="text" id="editPromptInputPlaceholder" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white">
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1">使用说明</label>
+                        <input type="text" id="editPromptInputHint" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1">缩略图 URL</label>
+                        <input type="url" id="editPromptThumbnailUrl" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white">
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">完整提示词内容</label>
+                    <textarea id="editPromptContent" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white h-32"></textarea>
+                </div>
+            </div>
+            
+            <div class="flex justify-end space-x-2 mt-6">
+                <button id="cancelEditPrompt" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition">
+                    取消
+                </button>
+                <button id="saveEditPrompt" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition">
+                    保存修改
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- API测试对话框 -->
     <div id="apiTestModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
@@ -686,6 +769,11 @@
                     content.classList.add('hidden');
                 });
                 document.getElementById(targetTab + 'Tab').classList.remove('hidden');
+                
+                // 如果切换到提示词管理，重新渲染列表以确保编辑状态正确
+                if (targetTab === 'prompts') {
+                    renderPromptList();
+                }
             });
         });
 
@@ -781,6 +869,8 @@
         }
 
         // === 提示词管理功能 ===
+        let editingPromptIndex = -1;
+
         document.getElementById('addPromptBtn').addEventListener('click', async function() {
             const name = document.getElementById('promptName').value.trim();
             const key = document.getElementById('promptKey').value.trim();
@@ -788,6 +878,7 @@
             const inputLabel = document.getElementById('promptInputLabel').value.trim();
             const inputPlaceholder = document.getElementById('promptInputPlaceholder').value.trim();
             const inputHint = document.getElementById('promptInputHint').value.trim();
+            const thumbnailUrl = document.getElementById('promptThumbnailUrl').value.trim();
             
             if (!name || !key) {
                 showStatus('请填写完整的提示词名称和键值', 'error');
@@ -810,7 +901,8 @@
                 prompt: content,
                 input_label: inputLabel || '',
                 input_placeholder: inputPlaceholder || '',
-                input_hint: inputHint || ''
+                input_hint: inputHint || '',
+                thumbnail_url: thumbnailUrl || ''
             };
 
             configManager.prompts.push(newPrompt);
@@ -818,12 +910,14 @@
             const serverSaveSuccess = await configManager.saveToServer();
             configManager.saveToBrowser();
             
+            // 清空表单
             document.getElementById('promptName').value = '';
             document.getElementById('promptKey').value = '';
             document.getElementById('promptContent').value = '';
             document.getElementById('promptInputLabel').value = '';
             document.getElementById('promptInputPlaceholder').value = '';
             document.getElementById('promptInputHint').value = '';
+            document.getElementById('promptThumbnailUrl').value = '';
             
             renderPromptList();
             updateSystemInfo();
@@ -839,33 +933,117 @@
             const promptList = document.getElementById('promptList');
             
             promptList.innerHTML = configManager.prompts.map((prompt, index) => `
-                <div class="flex items-start justify-between p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                <div class="flex items-start justify-between p-4 bg-gray-800/50 rounded-lg border border-gray-700 ${editingPromptIndex === index ? 'edit-mode' : ''}">
                     <div class="flex-1">
                         <h4 class="text-white font-medium flex items-center">
+                            ${prompt.thumbnail_url ? `<img src="${prompt.thumbnail_url}" alt="缩略图" class="w-8 h-8 rounded mr-2 object-cover">` : ''}
                             <span class="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
                             ${prompt.name}
                         </h4>
                         <p class="text-gray-500 text-sm">键值: ${prompt.key}</p>
                         ${prompt.prompt ? `<p class="text-gray-400 text-xs mt-1 truncate">${prompt.prompt.substring(0, 100)}${prompt.prompt.length > 100 ? '...' : ''}</p>` : '<p class="text-gray-400 text-xs">使用内置模板</p>'}
-                        ${(prompt.input_label || prompt.input_placeholder || prompt.input_hint) ? `
-                            <div class="mt-2 space-y-1">
-                                ${prompt.input_label ? `<p class="text-gray-400 text-xs">标签: ${prompt.input_label}</p>` : ''}
-                                ${prompt.input_placeholder ? `<p class="text-gray-400 text-xs">占位符: ${prompt.input_placeholder}</p>` : ''}
-                                ${prompt.input_hint ? `<p class="text-gray-400 text-xs">说明: ${prompt.input_hint}</p>` : ''}
-                            </div>
-                        ` : ''}
+                        <div class="mt-2 space-y-1">
+                            ${prompt.input_label ? `<p class="text-blue-300 text-xs">标签: ${prompt.input_label}</p>` : ''}
+                            ${prompt.input_placeholder ? `<p class="text-blue-300 text-xs">占位符: ${prompt.input_placeholder}</p>` : ''}
+                            ${prompt.input_hint ? `<p class="text-blue-300 text-xs">说明: ${prompt.input_hint}</p>` : ''}
+                            ${prompt.thumbnail_url ? `<p class="text-purple-300 text-xs">缩略图: 已设置</p>` : ''}
+                        </div>
                         <span class="text-yellow-400 text-xs">自定义风格</span>
                     </div>
-                    <button onclick="removePrompt(${index})" class="text-red-400 hover:text-red-300 ml-3">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                        </svg>
-                    </button>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="editPrompt(${index})" class="text-blue-400 hover:text-blue-300">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            </svg>
+                        </button>
+                        <button onclick="removePrompt(${index})" class="text-red-400 hover:text-red-300 ml-3">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             `).join('');
         }
 
+        // 编辑提示词
+        function editPrompt(index) {
+            editingPromptIndex = index;
+            const prompt = configManager.prompts[index];
+            
+            // 填充编辑表单
+            document.getElementById('editPromptName').value = prompt.name;
+            document.getElementById('editPromptKey').value = prompt.key;
+            document.getElementById('editPromptContent').value = prompt.prompt || '';
+            document.getElementById('editPromptInputLabel').value = prompt.input_label || '';
+            document.getElementById('editPromptInputPlaceholder').value = prompt.input_placeholder || '';
+            document.getElementById('editPromptInputHint').value = prompt.input_hint || '';
+            document.getElementById('editPromptThumbnailUrl').value = prompt.thumbnail_url || '';
+            
+            // 显示模态框
+            document.getElementById('promptEditModal').classList.remove('hidden');
+            
+            // 重新渲染列表以显示编辑状态
+            renderPromptList();
+        }
+
+        // 保存编辑
+        document.getElementById('saveEditPrompt').addEventListener('click', async function() {
+            if (editingPromptIndex < 0) return;
+            
+            const prompt = configManager.prompts[editingPromptIndex];
+            
+            // 检查键值是否重复
+            const newKey = document.getElementById('editPromptKey').value.trim();
+            if (newKey !== prompt.key && configManager.prompts.find((p, i) => p.key === newKey && i !== editingPromptIndex)) {
+                showStatus('该提示词键值已存在，请使用其他键值', 'error');
+                return;
+            }
+            
+            // 更新数据
+            prompt.name = document.getElementById('editPromptName').value.trim();
+            prompt.key = newKey;
+            prompt.prompt = document.getElementById('editPromptContent').value.trim();
+            prompt.input_label = document.getElementById('editPromptInputLabel').value.trim();
+            prompt.input_placeholder = document.getElementById('editPromptInputPlaceholder').value.trim();
+            prompt.input_hint = document.getElementById('editPromptInputHint').value.trim();
+            prompt.thumbnail_url = document.getElementById('editPromptThumbnailUrl').value.trim();
+            
+            // 保存到服务器
+            const serverSaveSuccess = await configManager.saveToServer();
+            configManager.saveToBrowser();
+            
+            // 关闭模态框
+            closeEditPrompt();
+            
+            // 重新渲染列表
+            renderPromptList();
+            updateSystemInfo();
+            
+            if (serverSaveSuccess) {
+                showStatus('提示词更新成功并保存到服务器', 'success');
+            } else {
+                showStatus('提示词已更新，但服务器保存失败', 'warning');
+            }
+        });
+
+        // 取消编辑
+        document.getElementById('cancelEditPrompt').addEventListener('click', function() {
+            closeEditPrompt();
+            renderPromptList();
+        });
+
+        // 关闭编辑模态框
+        function closeEditPrompt() {
+            document.getElementById('promptEditModal').classList.add('hidden');
+            editingPromptIndex = -1;
+        }
+
         async function removePrompt(index) {
+            if (!confirm('确定要删除此提示词吗？')) {
+                return;
+            }
+
             configManager.prompts.splice(index, 1);
             
             const serverSaveSuccess = await configManager.saveToServer();
@@ -926,8 +1104,8 @@
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        username: oldCredentials.username,
-                        password: oldCredentials.password,
+                        username: configManager.credentials.username,
+                        password: configManager.credentials.password,
                         config: configToSave
                     })
                 });
@@ -1255,6 +1433,10 @@
             }
             if (e.key === 'Escape' && !statusMessage.classList.contains('hidden')) {
                 statusMessage.classList.add('hidden');
+            }
+            if (e.key === 'Escape' && !document.getElementById('promptEditModal').classList.contains('hidden')) {
+                closeEditPrompt();
+                renderPromptList();
             }
         });
     </script>
